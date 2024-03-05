@@ -94,6 +94,7 @@ case "$1" in
 
   restart)
 	do_stop
+	sleep 2
 	do_start
 	;;
 

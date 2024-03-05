@@ -24,7 +24,8 @@ else
 			nohup /opt/pidp10/bin/vt05 -B -b 9600 telnet localhost 10018 > /dev/null 2>&1 &
 			;;
 		tv11)
-			nohup lxterminal --command="/opt/pidp10/bin/tv11 -s 4 -p 10011 localhost" > /dev/null 2>&1 &
+			#nohup lxterminal --command="/opt/pidp10/bin/tv11 -s 4 -p 10011 localhost" > /dev/null 2>&1 &
+			screen -dmS tv11 /opt/pidp10/bin/tv11 -s 4 -p 10011 localhost
 			;;
 		tv11-tty)
 			echo unimplemented - start manually: $1
@@ -33,7 +34,9 @@ else
 			nohup /opt/pidp10/bin/tvcon -2BS localhost > /dev/null 2>&1 &
 			;;
 		imlac)
-			nohup /opt/pidp10/bin/imlac imlac.simh > /dev/null 2>&1 &
+			#export HOME="/opt/pidp10/bin"
+			cd /opt/pidp10/bin
+			nohup /opt/pidp10/bin/imlac /opt/pidp10/bin/imlac.simh > /dev/null 2>&1 &
 			;;
 		tek)
 			nohup /opt/pidp10/bin/tek4010 -b9600 telnet localhost 10017 > /dev/null 2>&1 &

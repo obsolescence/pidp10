@@ -12,7 +12,7 @@ if [ "$(whoami)" == "root" ]; then
 fi
 
 
-read -p "Set required access priviliges to pidp10 simulator? " yn
+read -p "Set required access privileges to pidp10 simulator? " yn
 case $yn in
     [Yy]* )
 	    # make sure that the directory does not have root ownership
@@ -40,7 +40,8 @@ case $yn in
 	sudo apt install -y libpcre3
         sudo apt install -y libsdl2-image-dev
         sudo apt install -y libsdl2-net-dev
-        #the Pi does not come with telnet installed, so --
+	sudo apt install -y libvdeplug2
+	#the Pi does not come with telnet installed, so --
         sudo apt-get install -y telnet
         sudo apt-get install -y telnetd
 	# for pdpcontrol: 
