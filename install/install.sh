@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #
 # install script for PiDP-10
@@ -6,7 +6,7 @@
 #
 
 # check this script is NOT run as root
-if [ $(whoami) == "root" ]; then
+if [ "$(whoami)" == "root" ]; then
     echo script must NOT be run as root
     exit 1
 fi
@@ -15,18 +15,18 @@ fi
 read -p "Set required access priviliges to pidp10 simulator? " yn
 case $yn in
     [Yy]* )
+	    # make sure that the directory does not have root ownership
+	    # (in case the user did a simple git clone instead of 
+	    #  sudo -u pi git clone...)
+	    myusername=$(whoami)
+	    sudo chown -R $myusername:pi /opt/pidp10
 	    # make sure pidp10 simulator has the right privileges
 	    # to access GPIO with root privileges:
 	    sudo chmod +s /opt/pidp10/bin/pidp10
 	    # to run a RT thread:
 	    sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
-	    # make sure that the directory does not have root ownership
-	    # (in case the user did a simple git clone instead of 
-	    #  sudo -u pi git clone...)
-	    sudo chown -R$(whoami):pi /opt/pidp10
-	    sudo chmod -R 775 /opt/pidp10
-	    break;;
-    [Nn]* ) break;;
+	    ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -38,13 +38,17 @@ case $yn in
         sudo apt-get update
         # for simh:
 	sudo apt install -y libpcre3
+        sudo apt install -y libsdl2-image-dev
+        sudo apt install -y libsdl2-net-dev
         #the Pi does not come with telnet installed, so --
         sudo apt-get install -y telnet
         sudo apt-get install -y telnetd
+	# for pdpcontrol: 
+	sudo apt-get -y install expect
         # Install screen
         sudo apt-get install -y screen
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -55,15 +59,13 @@ case $yn in
         # update first...
         sudo apt-get update
         # for its install process:
-        sudo apt-get -y install expect
         sudo apt-get -y install autoconf
         # for graphics options in simh:
         sudo apt-get -y install libsdl2-dev
-        sudo apt install -y libsdl2-image-dev
-        sudo apt install -y libsdl2-net-dev
         sudo apt-get install -y libgtk-3-dev
         # for simh:
 	sudo apt install -y libpcre3-dev
+	sudo apt install -y libvdeplug2
 	# addl from Lars' its/build/dependencies script
 	sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
 # for networking support in simh:
@@ -80,8 +82,8 @@ case $yn in
 	#
 	sudo apt-get install -y libsdl2-mixer-dev  
 	sudo apt-get install -y libsdl2-ttf-dev  
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -98,8 +100,8 @@ case $yn in
 	sudo raspi-config nonint do_vnc 0
 	# switch from Wayland to X11
 	# sudo raspi-config nonint do_wayland W1
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -113,14 +115,14 @@ case $yn in
         # first, make backup copy of .bashrc...
         test ! -f ~/profile.backup && cp -p ~/.profile ~/profile.backup
         # add the line to .profile if not there yet
-        if grep -xq "pdpcontrol start" ~/.profile
+        if grep -xq "pdpcontrol start 0" ~/.profile
         then
             echo .profile modification already done, OK.
         else
             sed -e "\$apdpcontrol start" -i ~/.profile
         fi
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -133,8 +135,8 @@ case $yn in
     [Yy]* ) 
 	    sudo ln -i -s /opt/pidp10/bin/pdp.sh /usr/local/bin/pdp
 	    sudo ln -i -s /opt/pidp10/bin/pdpcontrol.sh /usr/local/bin/pdpcontrol
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -151,8 +153,8 @@ case $yn in
         cd its
         git submodule sync
         git submodule update --init --recursive
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -172,8 +174,8 @@ case $yn in
         wget -P /opt/pidp10/systems/tops10-603 https://pidp.net/pidp10-sw/tops603ka.zip
         unzip -d /opt/pidp10/systems/tops10-603 /opt/pidp10/systems/tops10-603/tops603ka.zip
         echo -----------------------
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -187,8 +189,8 @@ case $yn in
         mkdir ~/.fonts
         cp /opt/pidp10/install/TELETYPE1945-1985.ttf ~/.fonts/
 	fc-cache -v -f
-        break;;
-    [Nn]* ) break;;
+        ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 
@@ -202,8 +204,8 @@ case $yn in
         # wall paper
         pcmanfm --set-wallpaper /opt/pidp10/install/turist.png --wallpaper-mode=fit
 
-            break;;
-    [Nn]* ) break;;
+            ;;
+    [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
 

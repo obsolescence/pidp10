@@ -24,7 +24,6 @@ else
 			nohup /opt/pidp10/bin/vt05 -B -b 9600 telnet localhost 10018 > /dev/null 2>&1 &
 			;;
 		tv11)
-			#nohup /opt/pidp10/bin/tv11 -s 4 -p 10011 localhost > /dev/null 2>&1 &
 			nohup lxterminal --command="/opt/pidp10/bin/tv11 -s 4 -p 10011 localhost" > /dev/null 2>&1 &
 			;;
 		tv11-tty)

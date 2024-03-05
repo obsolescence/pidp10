@@ -104,7 +104,6 @@ case "$1" in
   stat)
 	  do_stat
 	;;
-
   *)
 	echo "Usage: pdpcontrol {start|stop|restart|status|stat}" || true
 	exit 1
