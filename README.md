@@ -36,7 +36,7 @@ https://github.com/PDP-10/its
 ## 1. How? Quick install & lookaround
 
     cd /opt # (needs to be installed here)
-    git clone https://github.com/obsolescence/pidp10.git
+    sudo git clone https://github.com/obsolescence/pidp10.git
     /opt/pidp10/install/install.sh
 
 Questions that the install script asks you:
