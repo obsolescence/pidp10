@@ -43,22 +43,31 @@ Questions that the install script asks you:
 
 -Set required access privileges to pidp10 simulator?
 	Makes /opt/pidp10 owned by user pi, gives simulator program GPIO access permissions
+ 
 -Install required dependencies for running the PiDP-10?
     Installs required libraries for precompiled binary
+    
 -Install add'l dependencies for compiling the source code?
 	Installs other libraries needed for recompilation
+ 
 -Let raspi-config enable i2c, VNC?
 	Optional, not needed
+ 
 -Automatically start the PiDP-10 core when logging in?
 	Optional, not needed, adds pidp10 to .profile
+ 
 -Copy control script links (pdpcontrol, pdp) to /usr/local/bin?
 	Optional, but required for user comfort
+ 
 -Do you wish to download ITS project source code?
 	Optional, it clones Lars Brinkhoff's github and the many it ties in to
+ 
 -Download and install required disk images?
 	Gets ITS and TOPS-10 installed, without you only have a Blinky demo
+ 
 -Install Teletype font?
 	Required for the Teletype Model 33 simulator
+ 
 -Add optional DEC flavoured wallpaper?
 	Optional
 
