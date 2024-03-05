@@ -19,7 +19,8 @@ case $yn in
 	    # (in case the user did a simple git clone instead of 
 	    #  sudo -u pi git clone...)
 	    myusername=$(whoami)
-	    sudo chown -R $myusername:pi /opt/pidp10
+	    mygroupname=$(id |sed -e "s|.*gid=[0-9]*(||g" -e "s|).*||")
+	    sudo chown -R $myusername:$mygroupname /opt/pidp10
 	    # make sure pidp10 simulator has the right privileges
 	    # to access GPIO with root privileges:
 	    sudo chmod +s /opt/pidp10/bin/pidp10
