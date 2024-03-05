@@ -1,0 +1,33 @@
+﻿CC = gcc
+
+DEBUG=-g -O0
+#DEBUG=-O2
+
+ifeq ($(X86), 1)
+OPTS = -DNO_GPIO
+endif
+
+CFLAGS = $(DEBUG) -std=gnu99 -U__STRICT_ANSI__ -finline-functions -fgcse-after-reload -fpredictive-commoning -fipa-cp-clone -fno-unsafe-loop-optimizations -fno-strict-overflow -DSIM_GIT_COMMIT_ID=c0050dc0588ec7d2a3f5ab41bc0079f069290143 -DSIM_GIT_COMMIT_TIME=2018-02-06T15:01:30+0100  -DSIM_COMPILER="GCC Version: 11.2.0" -DSIM_BUILD_TOOL=simh-makefile -D_GNU_SOURCE -DUSE_READER_THREAD -DSIM_ASYNCH_IO  -DHAVE_PCRE_H -DHAVE_SEMAPHORE -DHAVE_SYS_IOCTL -DHAVE_LINUX_CDROM -DSIM_HAVE_DLOPEN=so -DHAVE_UTIME -DHAVE_LIBPNG -DHAVE_ZLIB -DHAVE_GLOB -DHAVE_SHM_OPEN -DKA=1 -DUSE_INT64 -DUSE_SIM_CARD -DHAVE_PCAP_NETWORK -DBPF_CONST_STRING -DUSE_SHARED -DHAVE_VDE_NETWORK -DHAVE_TAP_NETWORK -DHAVE_SLIRP_NETWORK -DUSE_SIMH_SLIRP_DEBUG -DUSE_DISPLAY -DHAVE_LIBSDL -DUSE_SIM_VIDEO 
+
+
+SRCS = ./PDP10/kx10_cpu.c ./PDP10/kx10_sys.c ./PDP10/kx10_df.c ./PDP10/kx10_dp.c ./PDP10/kx10_mt.c ./PDP10/kx10_cty.c ./PDP10/kx10_lp.c ./PDP10/kx10_pt.c ./PDP10/kx10_dc.c ./PDP10/kx10_rp.c ./PDP10/kx10_rc.c ./PDP10/kx10_dt.c ./PDP10/kx10_dk.c ./PDP10/kx10_cr.c ./PDP10/kx10_cp.c ./PDP10/kx10_tu.c ./PDP10/kx10_rs.c ./PDP10/ka10_pd.c ./PDP10/kx10_rh.c ./PDP10/kx10_imp.c ./PDP10/ka10_tk10.c ./PDP10/ka10_mty.c ./PDP10/ka10_imx.c ./PDP10/ka10_ch10.c ./PDP10/ka10_stk.c ./PDP10/ka10_ten11.c ./PDP10/ka10_auxcpu.c ./PDP10/ka10_pmp.c ./PDP10/ka10_dkb.c ./PDP10/pdp6_dct.c ./PDP10/pdp6_dtc.c ./PDP10/pdp6_mtc.c ./PDP10/pdp6_dsk.c ./PDP10/pdp6_dcs.c ./PDP10/ka10_dpk.c ./PDP10/kx10_dpy.c ./PDP10/ka10_ai.c ./PDP10/ka10_iii.c ./PDP10/kx10_disk.c ./PDP10/ka10_pclk.c ./PDP10/ka10_tv.c ./display/display.c ./display/sim_ws.c ./display/type340.c  ./scp.c ./sim_console.c ./sim_fio.c ./sim_timer.c ./sim_sock.c ./sim_tmxr.c ./sim_ether.c ./sim_tape.c ./sim_disk.c ./sim_serial.c ./sim_video.c ./sim_imd.c ./sim_card.c ./PDP10/pidp10panel.c slirp/arp_table.c  slirp/if.c         slirp/mbuf.c   slirp/socket.c      slirp/tcp_timer.c slirp/bootp.c      slirp/ip_icmp.c    slirp/misc.c   slirp/tcp_input.c   slirp/tftp.c slirp/cksum.c      slirp/ip_input.c   slirp/sbuf.c   slirp/tcp_output.c  slirp/udp.c slirp/dnssearch.c  slirp/ip_output.c  slirp/slirp.c  slirp/tcp_subr.c slirp_glue/glib_qemu_stubs.c  slirp_glue/sim_slirp.c \
+./PDP10/pinctrl/gpiochip_bcm2712.c  ./PDP10/pinctrl/gpiochip_bcm2835.c  ./PDP10/pinctrl/gpiochip_rp1.c  ./PDP10/pinctrl/gpiolib.c  ./PDP10/pinctrl/pinctrl.c  ./PDP10/pinctrl/util.c  
+
+
+DEPS = scp.h sim_console.h sim_ether.h sim_imd.h sim_serial.h sim_timer.h scp_help.h sim_defs.h sim_fio.h  sim_rev.h sim_sock.h sim_tmxr.h sim_card.h sim_disk.h sim_frontpanel.h sim_scsi.h sim_tape.h sim_video.h PDP10/ks10_dup.h PDP10/kx10_defs.h PDP10/kx10_disk.h PDP10/pdp11_ddcmp.h PDP10/pidp10panel.h slirp/*.h slirp_glue/*.h slirp_glue/qemu/*.h \
+./PDP10/pinctrl/gpiolib.h  ./PDP10/pinctrl/gpiochip.h  ./PDP10/pinctrl/util.h
+
+OBJS = $(SRCS:.c=.o)
+
+LIBS = `/usr/bin/sdl2-config --libs`  -lm -lrt -lpthread -lpcre -ldl -lpng -lz -lvdeplug -Wl,-R,/lib/x86_64-linux-gnu/ -L/lib/x86_64-linux-gnu/
+
+BIN/pidp10: $(OBJS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+    
+%.o: %.c $(DEPS)
+	$(CC) $(CFLAGS) $(OPTS) -o $@ -c $< -I . -I ./PDP10 -I./slirp -I./slirp_glue -I./slirp_glue/qemu `/usr/bin/sdl2-config --cflags` 
+
+clean:
+	find . -name '*.o' -delete
+	rm -r ../BIN/pidp10
+

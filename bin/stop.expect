@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+
+set timeout 3
+set screen_session "pidp10"
+spawn screen -x $screen_session
+sleep 1
+send "\x05"
+sleep 1
+send "exit\r"
+#sleep 2
+
+# leave the screen session
+#send "\x1D"
+#expect "Detached"
+exit
+

@@ -1,0 +1,41 @@
+echo =====================================================================
+SET CONSOLE TELNET=BUFFERED=144
+set cons telnet=1025
+echo
+echo use 'telnet localhost 1025' or simply 'pdp con' for PDP-10 console
+
+echo incoming: %1
+
+d 1000 HALT
+g 1000
+echo
+
+; I think there's bug in simh's if statement, equal and not equal are reversed
+; so below, this works as 'if command line option is not zero, then put it in sw
+; Crazy, I know.
+;
+if %1=0	d sw %1;	echo "Ignoring SR switches, reading boot option from command line"
+else echo "Reading boot option of SR switches"
+
+echo
+echo =====================================================================
+echo
+ex sw
+echo
+
+;if sw=0    echo loading Hill's Blinky;		cd /opt/pidp10/systems/hills-blinky;   do boot.ini;	goto end
+if sw=1    echo READ IN boots ITS from paper tape;  cd /opt/pidp10/systems/its;      do boot.ini;	goto end
+if sw=2    echo booting tops-10 6.03ka;	cd /opt/pidp10/systems/tops10-603;   do boot.ini; goto end
+
+echo
+echo =====================================================================
+echo
+echo Boot option not recognised. Running Blinkenlights...
+echo
+echo =====================================================================
+echo
+cd /opt/pidp10/systems/hills-blinky
+do boot.ini
+
+:end
+

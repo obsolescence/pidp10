@@ -1,0 +1,5 @@
+attach -u tty 12345,connect=localhost:10016;notelnet
+set rom type=stty
+load -s ./ssv22.iml
+reset
+go
