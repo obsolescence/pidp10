@@ -11,6 +11,10 @@ if [ "$(whoami)" == "root" ]; then
     exit 1
 fi
 
+if [ ! -d "/opt/pidp10" ]; then
+    echo clone git repo into /opt/
+    exit 1
+fi
 
 read -p "Set required access privileges to pidp10 simulator? " yn
 case $yn in
