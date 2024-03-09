@@ -36,6 +36,20 @@ case $yn in
 esac
 
 
+# ---------------------------
+# Copy control scripts (pdpcontrol, pdp) to /usr/local/bin?
+# ---------------------------
+read -p "Copy control script links (pdpcontrol, pdp) to /usr/local/bin? " yn
+case $yn in
+    [Yy]* ) 
+	    sudo ln -i -s /opt/pidp10/bin/pdp.sh /usr/local/bin/pdp
+	    sudo ln -i -s /opt/pidp10/bin/pdpcontrol.sh /usr/local/bin/pdpcontrol
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
+
+
 read -p "Install required dependencies for running the PiDP-10? " yn
 case $yn in
     [Yy]* ) 
@@ -54,6 +68,45 @@ case $yn in
 	sudo apt-get -y install expect
         # Install screen
         sudo apt-get install -y screen
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
+
+
+# ---------------------------
+# install PDP-10 disk images
+# ---------------------------
+read -p "Download and install required disk images? " yn
+case $yn in
+    [Yy]* ) 
+        echo -----------------------
+        echo Downloading PDP-10 ITS disk images
+        wget -P /opt/pidp10/systems/its https://pidp.net/pidp10-sw/its-system.zip
+	unzip -d /opt/pidp10/systems/its /opt/pidp10/systems/its/its-system.zip
+        echo -----------------------
+        echo Downloading PDP-10 TOPS-10 disk images
+        wget -P /opt/pidp10/systems/tops10-603 https://pidp.net/pidp10-sw/tops603ka.zip
+        unzip -d /opt/pidp10/systems/tops10-603 /opt/pidp10/systems/tops10-603/tops603ka.zip
+        echo -----------------------
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
+
+
+# ---------------------------
+# install Lars Brinkhoff's full ITS project
+# ---------------------------
+read -p "Do you wish to download ITS project source code? " yn
+case $yn in
+    [Yy]* ) 
+        cd /opt/pidp10/src
+        git clone https://github.com/PDP-10/its.git
+        # get all the submodules (vt05, tektronix, etc)
+        cd its
+        git submodule sync
+        git submodule update --init --recursive
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
@@ -85,7 +138,7 @@ case $yn in
         sudo apt install -y libedit-dev
 	# for sty:
 	# this one I'm not sure of --
-	sudo apt install -y libx11-dev libxt-libxft-dev
+	sudo apt install -y libx11-dev libxt-dev	//not xft, fixed
 	#
 	sudo apt-get install -y libsdl2-mixer-dev  
 	sudo apt-get install -y libsdl2-ttf-dev  
@@ -116,71 +169,32 @@ esac
 # ---------------------------
 # Start up the PDP-10 automatically when logging in?
 # ---------------------------
+append_to_file() {
+	# first, make backup copy of .bashrc...
+        test ! -f $1.backup && cp -p $1 $1.backup
+        # add the line to profile if not there yet
+        if grep -xq "pdpcontrol start" $1
+        then
+            echo profile modification already done, OK.
+        else
+            sed -e "\$apdpcontrol start" -i $1
+        fi
+}
+
 read -p "Automatically start the PiDP-10 core when logging in? " yn
 case $yn in
     [Yy]* ) 
-        # first, make backup copy of .bashrc...
-        test ! -f ~/profile.backup && cp -p ~/.profile ~/profile.backup
-        # add the line to .profile if not there yet
-        if grep -xq "pdpcontrol start 0" ~/.profile
-        then
-            echo .profile modification already done, OK.
-        else
-            sed -e "\$apdpcontrol start" -i ~/.profile
-        fi
-        ;;
-    [Nn]* ) ;;
-        * ) echo "Please answer yes or no.";;
-esac
+	echo testing for .profile or otherwise, .bash_profile
+	if [ -f "$HOME/.profile" ]; then
+		echo .profile found
+		append_to_file "$HOME/.profile"
 
-
-# ---------------------------
-# Copy control scripts (pdpcontrol, pdp) to /usr/local/bin?
-# ---------------------------
-read -p "Copy control script links (pdpcontrol, pdp) to /usr/local/bin? " yn
-case $yn in
-    [Yy]* ) 
-	    sudo ln -i -s /opt/pidp10/bin/pdp.sh /usr/local/bin/pdp
-	    sudo ln -i -s /opt/pidp10/bin/pdpcontrol.sh /usr/local/bin/pdpcontrol
-        ;;
-    [Nn]* ) ;;
-        * ) echo "Please answer yes or no.";;
-esac
-
-
-# ---------------------------
-# install Lars Brinkhoff's full ITS project
-# ---------------------------
-read -p "Do you wish to download ITS project source code? " yn
-case $yn in
-    [Yy]* ) 
-        cd /opt/pidp10/src
-        git clone https://github.com/PDP-10/its.git
-        # get all the submodules (vt05, tektronix, etc)
-        cd its
-        git submodule sync
-        git submodule update --init --recursive
-        ;;
-    [Nn]* ) ;;
-        * ) echo "Please answer yes or no.";;
-esac
-
-
-# ---------------------------
-# install PDP-10 disk images
-# ---------------------------
-read -p "Download and install required disk images? " yn
-case $yn in
-    [Yy]* ) 
-        echo -----------------------
-        echo Downloading PDP-10 ITS disk images
-        wget -P /opt/pidp10/systems/its https://pidp.net/pidp10-sw/its-system.zip
-	unzip -d /opt/pidp10/systems/its /opt/pidp10/systems/its/its-system.zip
-        echo -----------------------
-        echo Downloading PDP-10 TOPS-10 disk images
-        wget -P /opt/pidp10/systems/tops10-603 https://pidp.net/pidp10-sw/tops603ka.zip
-        unzip -d /opt/pidp10/systems/tops10-603 /opt/pidp10/systems/tops10-603/tops603ka.zip
-        echo -----------------------
+	elif [ -f "$HOME/.bash_profile" ]; then
+		echo .bash_profile found
+		append_to_file "$HOME/.bash_profile"
+	else
+		echo no .profile or .bash_profile found. Odd. Skipping autorun
+	fi
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
