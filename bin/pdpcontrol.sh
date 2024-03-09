@@ -73,12 +73,18 @@ do_stop() {
 	    echo "Stopping PiDP-10" "pidp"
 	    # this will make simh respond to quit signal, otherwise 
 	    /opt/pidp10/bin/stop.expect
-		#leaving screen and killing the process are unnecessary.
+		#leaving screen *and* killing the process are unnecessary.
 		#superstition.
 	    screen -S pidp10 -X quit
 	    pkill -9 pidp10
 	    status=$?
 	    echo $status
+	fi
+
+	# check for a running tv11 as well, and close it
+	if pgrep -x "tv11" >/dev/null; then
+		echo Stopping tv11 also...
+		pkill -2 tv11
 	fi
 	return $status
 }

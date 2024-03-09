@@ -23,10 +23,11 @@ else
 		vt05)
 			nohup /opt/pidp10/bin/vt05 -B -b 9600 telnet localhost 10018 > /dev/null 2>&1 &
 			;;
-		tv11)
-			#nohup lxterminal --command="/opt/pidp10/bin/tv11 -s 4 -p 10011 localhost" > /dev/null 2>&1 &
-			screen -dmS tv11 /opt/pidp10/bin/tv11 -s 4 -p 10011 localhost
-			;;
+#		tv11)
+# no need to launch tv11 manually, done from its boot.ini
+#			#nohup lxterminal --command="/opt/pidp10/bin/tv11 -s 4 -p 10011 localhost" > /dev/null 2>&1 &
+#			screen -dmS tv11 /opt/pidp10/bin/tv11 -s 4 -p 10011 localhost
+#			;;
 		tv11-tty)
 			echo unimplemented - start manually: $1
 			;;
