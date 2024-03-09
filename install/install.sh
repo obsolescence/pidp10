@@ -46,6 +46,7 @@ case $yn in
         sudo apt install -y libsdl2-image-dev
         sudo apt install -y libsdl2-net-dev
 	sudo apt install -y libvdeplug2
+	sudo apt install -y libpcap-dev
 	#the Pi does not come with telnet installed, so --
         sudo apt-get install -y telnet
         sudo apt-get install -y telnetd
