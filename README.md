@@ -104,7 +104,7 @@ I only wrapped up other people's genius into a physical front panel. There is a 
 @aap added the PDP-6, Knight TV and many other elements.
 
 But they too built on a community of dozens, going back a long time. Ken Harrenstein's emulator in 1992 was the start, and he did the first work to make a Personal ITS distribution available. In the early 2000's ITS was also running on Supnik's SIMH. Huge strides were enabled by @rcornwell adding ITS support to his KA10 emulator. Work with @larsbrinkhoff during fall 2017 resulted in ultimately booting the very accurate KA10 simulator successfully on January 8, 2018. Much of the following AI lab emulation followed from of this. 
-@eswenson1 and @atsampson did almost everything related to Maclisp, Macsyma, Muddle, and Zork.
-@bictorv is the cherished champion of Chaosnet.
-Without the effort of @lisper et al we probably wouldn't have the wealth of backup data to draw from. Without that, ITS would only have been a whisper of a ghost of its former grandeur.
-And of course, ITS preservation started already in the 80s with @bawden and many others, most of which are unsung heroes.
+<br>@eswenson1 and @atsampson did almost everything related to Maclisp, Macsyma, Muddle, and Zork.
+<br>@bictorv is the cherished champion of Chaosnet.
+<br>Without the effort of @lisper et al we probably wouldn't have the wealth of backup data to draw from. Without that, ITS would only have been a whisper of a ghost of its former grandeur.
+<br>And of course, ITS preservation started already in the 80s with @bawden and many others, most of which are unsung heroes.
