@@ -7,7 +7,7 @@ As of March 2024, this is in beta stage for the first 50 daring builders (thank 
 
 Main web sites:
 
-https://obsolescence.dev/pidp10
+https://obsolescence.dev/pidp10 
 - Overview & context
 
 https://obsolescence.wixsite.com/obsolescence/pidp10
@@ -16,108 +16,75 @@ https://obsolescence.wixsite.com/obsolescence/pidp10
 
 ## 0. What is this?
 
-The PiDP-10 is a replica of the PDP-10 'mainframe' complete with glorious Blinkenlights. 
-
-Inside sits a Raspberry Pi with two concurrent hearts beating: a virtualised PDP-10 and a physical Linux.  
+The PiDP-10 is a replica of the PDP-10, a 1960s mainframe, complete with glorious Blinkenlights. Inside sits a Raspberry Pi with two concurrent hearts beating: a virtualised PDP-10 and a physical Linux.  
 One core may be virtual rather than silicon, but no matter.
 
-The world inside the PiDP-10 is not just a PDP-10, but the entire MIT AI Lab (of myth and lore) consisting of dozens of interlinked computers and other hardware. It normally runs the ITS operating system, with hundreds of MIT software projects recovered from MIT tape archives. You can also boot into TOPS-10, DEC's own operating system, with its own storied history.
-
-**The mythology, some introductory links**
-https://en.wikipedia.org/wiki/PDP-10  
-https://en.wikipedia.org/wiki/MIT_Computer_Science_and_Artificial_Intelligence_Laboratory#LCS_and_AI_Lab  
-https://en.wikipedia.org/wiki/Hackers:_Heroes_of_the_Computer_Revolution , intro chapters online here: https://www.gutenberg.org/cache/epub/729/pg729.html  
-https://en.wikipedia.org/wiki/Hacker_ethic  
-._
-https://github.com/PDP-10/its
+The world inside the PiDP-10 is not just the PDP-10 alone, but the entire MIT AI Lab (of myth and lore) consisting of dozens of interlinked computers and other hardware. It normally runs the ITS operating system, with 400 software projects recovered from MIT tape archives. You can also boot into TOPS-10, DEC's own operating system, with its own storied history. That would be pdpcontrol start 2.
 
 ![image](https://user-images.githubusercontent.com/7725197/209852125-55c81735-f8c0-4956-8ba1-e912d53338ec.png)
 
-## 1. How? Quick install & lookaround
 
-    cd /opt # (needs to be installed here)
+## 1. Quick install & lookaround
+
+    cd /opt
     sudo git clone https://github.com/obsolescence/pidp10.git
     /opt/pidp10/install/install.sh
 
-Questions that the install script asks you:
+Questions that the install script asks you: self-explanatory, normally all would be answered with Y, except for installing the ITS source code and its dependencies. Do those later to save time.
 
--Set required access privileges to pidp10 simulator?
-	Makes /opt/pidp10 owned by user pi, gives simulator program GPIO access permissions
- 
--Install required dependencies for running the PiDP-10?
-    Installs required libraries for precompiled binary
-    
--Install add'l dependencies for compiling the source code?
-	Installs other libraries needed for recompilation
- 
--Let raspi-config enable i2c, VNC?
-	Optional, not needed
- 
--Automatically start the PiDP-10 core when logging in?
-	Optional, not needed, adds pidp10 to .profile
- 
--Copy control script links (pdpcontrol, pdp) to /usr/local/bin?
-	Optional, but required for user comfort
- 
--Do you wish to download ITS project source code?
-	Optional, it clones Lars Brinkhoff's github and the many it ties in to
- 
--Download and install required disk images?
-	Gets ITS and TOPS-10 installed, without you only have a Blinky demo
- 
--Install Teletype font?
-	Required for the Teletype Model 33 simulator
- 
--Add optional DEC flavoured wallpaper?
-	Optional
+What the installer does: it keeps itself limited to things in /opt/pidp10; except for creating two symlinks in /usr/bin and if desired, adding a line to ~/.profile to autostart the PDP-10 at log in.
 
 
-## 2. More: Full install and explaining the setup
+## 2. Explaining the setup
 
-Keep in mind, this repository is really for the PiDP-10 - or a regular Raspberry Pi (4 or 5 recommended). If all you have is a Linux PC, you should use the original ITS repository ().
+This repository is really for the PiDP-10 - or a regular Raspberry Pi (4 or 5 recommended). But it will work just fine on regular X86/64 Linux too if you do not have a Pi at hand. See below.
 
-Explanation: there's lots of software next to the PDP-10 engine itself. Around that are binaries to simulate various hooked-up hardware from the MIT AI lab: some PDP-11s, a PDP-6, other computers, terminals, etc. These are 'the binaries' and this is the hardware farm that becomes your playground. Not everything has to run on the PiDP-10 itself.
+Explanation: there's lots of simulator programs next to the PDP-10 engine itself (they're all in /opt/pidp10/bin) to simulate various hooked-up hardware from the MIT AI lab. Some PDP-11s, a PDP-6, other computers, terminals, etc. 
+This is the hardware farm that becomes your playground. Most of the simulator programs connect with each other through telnet links (even if the simulated machines think it's serial ports and other cabling, it is all telnet in truth).
 
-It is quite normal to have your terminal simulator (etc, etc) run on your laptop, logging in to the PiDP-10 remotely. And you might invite others for a  multiplayer Mazewar session, each connecting to the PiDP-10 from their own location. So binaries for Intel linux will be added soon to this distribution, at the moment use the original ITS repository to generate their binaries. 
+So not everything has to run on the PiDP-10 itself. It is quite normal to run the Knight TV terminal simulator on your laptop, logging in to the PiDP-10 remotely. You might even invite others for a  multiplayer Mazewar session, each connecting to the PiDP-10 from their own location.
+
+Two control scripts regulate the PDP-10:
+
+- **pdpcontrol** \[start/stop/status\]
+	If you run this *without* PiDP-8 hardware, then you *must* do `pdpcontrol start 1` instead of `pdpcontrol start`. Because you don't have the front panel switches.
+	The relevant boot numbers: 0 = blinkenlights demo, 1 = boot ITS, 2 = boot TOPS-10.
+
+- **pdp**: if run without any command line arguments, inspect the simulation engine. Enter `CTRL-A` `d` to exit again.
+ 	If run with command line arguments, start up peripheral simulators. So `pdp con` will get you the Teletype, `pdp tvcon` the Knight terminal, `pdp vt52` a - well, vt52. Do `pdp ?` for all options.
+
+
+## 3. Installing on a regular Linux X86/64 system instead of a Pi
+
+The project will actually run just fine on a Linux laptop instead of a Pi. There is only one thing to do: after running the install script, **untar the X86 binaries in /opt/pidp10/bin**. They will overwrite the Pi binaries and that is all you need to do. Not elegant, very effective.
+
+
+## 4. Using terminal simulators on a Linux laptop to connect with the PiDP-10
+
+Install the project on your X86 Linux machine as per section 3 above. Then, edit the /opt/pip10/bin/pdp.sh script, and where it says 'localhost', change that to raspberrypi.local, or whatever name you gave the Pi. You might want to save the edited script a different name, pdp-remote.sh or somesuch. `./pdp-remote.sh tvcon` will then connect your Knight TV to the PiDP-10.
 
 
 ## 3. Command & Control your hardware lab
 
-The tools below assume that you ran the install script. There are then two command line scripts, the install script puts links in /usr/local/bin:
+More detailed information on two command line scripts:
 
 - **pdpcontrol**: power up/power down the PDP-10 itself
 
-`pidpcontrol start` starts the PDP-10 engine in the background, wrapped in a 'screen' session; `pidpcontrol stop` kills the PDP-10. Do make sure you have shut down any operating system on the PDP-10 before. This is a power switch, not a shutdown command. `pidpcontrol stat` and `pidpcontrol stat` tell you whether the PDP-10 is up or not.
+`pidpcontrol start` starts the PDP-10 engine in the background, wrapped in a 'screen' session; `pidpcontrol stop` kills the PDP-10. Do make sure you have shut down any operating system on the PDP-10 before. This is a power switch, not a shutdown command. `pidpcontrol stat` and `pidpcontrol stat` tell you whether the PDP-10 is up or not. As mentioned, do pdpcontrol start 1 if you don't actually have the PiDP-10 front panel.
 
 - **pdp**: monitor the PDP-10 engine
 
-`pdp` will get you into the 'screen' session that contains the PDP-10 engine. This is seldomly necessary, but it allows you to set the simh settings interactively. You can close the screen session if you started it from the command line with "Ctrl-A, d". If run from the GUI, just close the window.
-`pdp -h` will show you how it can start all the various terminals and devices. `pdp con` gets you to the Teletype Model 33 simulator for instance, needed for the ITS boot process.
+`pdp` will get you into the 'screen' session that contains the simh PDP-10 engine. This is seldomly necessary, but it allows you to set the simh settings interactively. You can leave the screen session if you started it from the command line with `Ctrl-A` `d`. 
+Inside simh, you can use CTRL-E to interrupt the simulations, read the simh manuals for what to do, and enter `cont` to resume the simulation.
+
+`pdp -h` will show you how it can start all the various terminals and devices. `pdp con` gets you to the Teletype Model 33 simulator for instance, needed for the ITS boot process. The noisy Teletype simulation of `pdp con` is fun for a while, when you tire of the noise use `pdp telcon` instead. 
 
 Please note that `pdpcontrol` and `pdp` interact with the PDP-10 engine, but are not part of it. They are just scripts in /opt/pidp10/bin. You can run and close them as you see fit. The PDP-10 just runs.
 
 
 ## 4. Exploring the AI Labs playground
 
-**Choice of terminals from pdpanel:**
-
-You have a choice of VT-05, VT-52, Datapoint 3300, Imlac, Knight TV or regular telnet as regular terminals. The operator console is either a simulated Teletype (`pdp con` with Teletype noise) or simple telnet (`pdp telcon` with peace and quiet) to log in to the PDP-10. The operator's console is used to control the PDP-10 but not really for normal users.
-
-The Knight TV-11 is available too, which consists of two parts. First, a PDP-11/20 computer which has its memory mapped into the PDP-10, allowing a great number of concurrent graphics terminals to connect. You first have to boot up the TV-11 and then you can start up any number of the little Knight TV terminals. The tv11 simulator is called `tv11` unsurprisingly, and it is already fired up by the simh ITS boot script. The TV-11 can be hacked nicely from the PDP-10 side as well as from the Knight TV terminals, it has its own Teletype attached.
-
-The GT40 is a PDP-11 with vector/pixel display, which also has some special software for it on ITS. Of course, it can also run as its own PDP-11 if you wish. To play Lunar Lander. The Tektronix 4010 is an amazing terminal too, with the highest resolution graphics of them all.
-
-Important: you can run all these terminal sessions from other computers, not just the Pi. the PDP-10 thinks of the above as somehow wired into itself. But the wiring is implemented virtually, over telnet. Which means that you should not limit yourself to running these terminal simulations on the PiDP itself. Just use a mix of laptops to connect up. Binaries are available for regular Raspberry Pi's and PC Linux. It would not be a problem to get them to run in Windows as well.
-
-
-**Other connected hardware:**
-
-The old PDP-6 is connected to the PDP-10 through shared memory. It can be used as a separate CPU, controlled from ITS on the PDP-10. Its real purpose in life is to play its own version of spacewar, so as to leave the PDP-10 free for non-gamers. The PDP-6 front panel is simulated on-screen, and of course it has its own Teletypes attached to it. Next to spacewar, there are some other tasks it can perform as well. 
-
-The IMP sits hidden in the background and gives you access to the internet, which seems to have grown out of Arpanet whilst we were not looking. Chaosnet is another network to hook up many local computers. Worth investigating. These days, there is such a thing as a Global Chaosnet. 
-
-The Type 340 display is wedded to the PDP-10, it must run on the same machine as the PDP-10 engine. The Type 340 is the pretty way of looking at a PDP-10. The system monitor (Peek) can use it, spacewar runs on it, and lots of other software as well. Think of it as the second display on your PDP-10 (although it comes with its own simulated keyboard and light pen).
-
+The the two main project web sites mentioned at the top of the page.
 
 **Source code and hacking about**
 Assuming you let the installer run though all its options, you will find nearly a dozen software projects (the PDP-10, the terminals, the hooked-up other computers from the AI Lab). Edit-compile-run, and install your enhanced binaries in /opt/pidp10 once you are satisfied. Note that almost all these tools are projects stored here as live git submodules.
@@ -129,4 +96,14 @@ Assuming you let the installer run though all its options, you will find nearly 
 
 
 # Credit where credit is due
-I only wrapped up other people's genius into a physical front panel. There is a whole community behind this body of code. So as not to leave anyone short, I will only mention three people here: Richard Cornwell wrote the PDP-10 KA10 simulator (the Engine) and Lars Brinkhoff revived ITS and all the peripheral hardware, to make this a Hacker Playground. Angelo Papenhoff added the PDP-6 and many other elements to this. Which leaves me to emphasize that I am only the Master of Plastics, giving this a physical form factor in the PiDP-10. That is not where the genius lies, and it is also not where the hours of hard work were spent. This builds on a community of dozens.
+I only wrapped up other people's genius into a physical front panel. There is a whole community behind this body of code. 
+
+@rcornwell wrote the PDP-10 KA10 simulator (the Engine),
+@larsbrinkhoff did much of the work on the ITS Reconstruction Project,
+Angelo Papenhoff added the PDP-6, Knight TV and many other elements.
+
+But this builds on a community of dozens, going back a long time. Ken Harrenstein's emulator in 1992 was the start, and he did the work to make a Personal ITS distribution available. In the early 2000's ITS was also running on Supnik's SIMH. Huge strides were enabled by @rcornwell adding ITS support to his KA10 emulator. Work with @larsbrinkhoff during fall 2017 resulted in ultimately booting the KA10 simulator successfully on January 8, 2018. Much of the following AI lab emulation came out of this. 
+@eswenson1 and @atsampson did almost everything related to Maclisp, Macsyma, Muddle, and Zork.
+@bictorv is the cherished champion of Chaosnet.
+Without the effort of @lisper et al we probably wouldn't have the wealth of backup data to draw from. Without that, ITS would only have been a whisper of a ghost of its former grandeur.
+And of course, ITS preservation started already in the 80s with @bawden and many others, most of which are unsung heroes.
