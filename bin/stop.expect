@@ -6,8 +6,12 @@ spawn screen -x $screen_session
 sleep 1
 send "\x05"
 sleep 1
+# send second CTRL-E for script-in-script problem on naked Pis
+send "\x05"
+sleep 1
+# --------------
 send "exit\r"
-#sleep 2
+sleep 4
 
 # leave the screen session
 #send "\x1D"
