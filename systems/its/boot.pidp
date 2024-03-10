@@ -1,5 +1,17 @@
+cd /opt/pidp10/systems/its
+
+echo
+echo =====================================================================
+echo
+SET CONSOLE TELNET=BUFFERED=144
+set cons telnet=1025
+echo
+echo use 'telnet localhost 1025' 
+echo or 'pdp con'  or 'pdp telcon' for PDP-10 console
+echo
+echo =====================================================================
+echo
 ; comment out if you do not want the Knight TV system started:
-;!nohup lxterminal --command="/opt/pidp10/bin/tv11 -s 4 -p 10011 localhost" > /dev/null 2>&1 &
 ; we start tv11 under screen, so you can reconnect to it for inspection
 !pgrep tv11 && pkill -2 tv11 && echo stopped old tv11 && sleep 3
 !screen -dmS tv11 /opt/pidp10/bin/tv11 -s 4 -p 10011 localhost
@@ -95,23 +107,6 @@ set imx channel=74;unit3;axis3
 ; ------------
 
 
-; do a 'boot ptr' to skip READ IN for Pi's without PiDP hardware
-; ----------------------------------------------------------------
-; explanaton: if started with pdpcontrol start, 
-; --> we assume a PiDP panel is attached
-; if started with pdpcontrol start 1, we assume no panel is present,
-; --> and the user is unable to press READ IN switch. 
-; --> So in that case, go boot the paper tape straight away
-;
-if %1!=1 echo NOT WAITING FOR READ IN KEYPRESS, BOOTING DSKDMP;	b ptr
-; BUG WARNING: i swear, simh reverses != and = in if statements. 
-; Above, it should be =, not != ... 
-; if I am right, and someone fixes this bug, the above will be wrong and
-; here is your pointer: != must become =
-
-
-
-; still here because 'pdpcontrol start' was run without an extra parameter.
 ; ----------------------------------------------------------------
 ; so the user has a PiDP-10 front panel and should press READ IN before
 ; booting starts.
@@ -125,3 +120,4 @@ d 1005 366100001005
 d 1006 324000001001
 d 1007 000000000000
 go 1000
+;b ptr

@@ -3,14 +3,16 @@
 set timeout 3
 set screen_session "pidp10"
 spawn screen -x $screen_session
-sleep 3
+sleep 2
 send "\x05"
 sleep 2
 # a second Ctrl-E for blinkenless Pis, they suffer from script-in-script
 send "\x05"
 sleep 2
 # ----
-send "set dpy ena\rco\r"
+send "set dpy ena\r"
+sleep 2
+send "co\r"
 sleep 2
 
 # leave the screen session

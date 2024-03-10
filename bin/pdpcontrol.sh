@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 ### BEGIN INIT INFO
 # Provides:		pidp10
@@ -17,6 +17,7 @@ umask 022
 . /lib/lsb/init-functions
 
 boot_number=$2
+argc=$#
 pidp10="/opt/pidp10/bin/pidp10"
 pidp_dir=`dirname $pidp10`
 pidp_bin=`basename $pidp10`
@@ -52,13 +53,20 @@ do_start() {
 	    echo "PiDP-10 is already running, not starting again." >&2
 	    exit 0
 	fi
-
-	echo "Starting PiDP-10" "pidp10"
+	if [ $argc -ne 2 ]; then
+		/opt/pidp10/bin/scansw10
+		boot_number=$?
+		file_extension=".pidp"
+	else
+		file_extension=".pi"
+	fi
+	sys=$boot_number
+	sel=`awk '$1 == '$sys' { sys = $2; exit } END { if(sys) print sys; else print "hills-blinky" }' < /opt/pidp10/systems/selections`
+	echo Starting PiDP-10
 	cd $pidp_dir
-	echo
-	echo
-	echo screen -dmS pidp10 ./$pidp_bin bootscript.simh $boot_number
-	screen -dmS pidp10 ./$pidp_bin bootscript.simh $boot_number
+	echo screen -dmS pidp10 ./$pidp_bin /opt/pidp10/systems/$sel/boot$file_extension
+	screen -dmS pidp10 ./$pidp_bin /opt/pidp10/systems/$sel/boot$file_extension
+	#screen -dmS pidp10 ./$pidp_bin bootscript.simh $boot_number
 	status=$?
 	echo $status
 	return $status

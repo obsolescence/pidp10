@@ -1,3 +1,15 @@
+cd /opt/pidp10/systems/hills-blinky
+echo
+echo =====================================================================
+echo
+SET CONSOLE TELNET=BUFFERED=144
+set cons telnet=1025
+echo
+echo use 'telnet localhost 1025' 
+echo or 'pdp con'  or 'pdp telcon' for PDP-10 console
+echo
+echo =====================================================================
+echo
 ;	TITLE	BLINKY-10 V2.0
 ;
 ;	************************************************************
