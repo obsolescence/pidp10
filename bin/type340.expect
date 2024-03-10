@@ -6,6 +6,10 @@ spawn screen -x $screen_session
 sleep 3
 send "\x05"
 sleep 2
+# a second Ctrl-E for blinkenless Pis, they suffer from script-in-script
+send "\x05"
+sleep 2
+# ----
 send "set dpy ena\rco\r"
 sleep 2
 
