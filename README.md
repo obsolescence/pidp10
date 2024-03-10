@@ -19,7 +19,7 @@ https://obsolescence.wixsite.com/obsolescence/pidp10
 The PiDP-10 is a replica of the PDP-10, a 1960s mainframe, complete with glorious Blinkenlights. Inside sits a Raspberry Pi with two concurrent hearts beating: a virtualised PDP-10 and a physical Linux.  
 <br>One core may be virtual rather than silicon, but no matter.
 
-The world inside the PiDP-10 is not just the PDP-10 alone, but the entire MIT AI Lab (of myth and lore) consisting of dozens of interlinked computers and other hardware. It normally runs the ITS operating system, with 400 software projects recovered from MIT tape archives. You can also boot into TOPS-10, DEC's own operating system, with its own storied history. That would be pdpcontrol start 2.
+The world inside the PiDP-10 is not just the PDP-10 alone, but the entire MIT AI Lab (of myth and lore) consisting of dozens of interlinked computers and other hardware. It normally runs the ITS operating system, with 400 software projects recovered from MIT tape archives. You can also boot into TOPS-10, DEC's own operating system, with its own storied history.
 <br><br>
 ![image](https://obsolescence.dev/images/pidp10/PiDP-10_130127.jpg)
 <br><br>
