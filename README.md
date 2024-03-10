@@ -20,8 +20,9 @@ The PiDP-10 is a replica of the PDP-10, a 1960s mainframe, complete with gloriou
 <br>One core may be virtual rather than silicon, but no matter.
 
 The world inside the PiDP-10 is not just the PDP-10 alone, but the entire MIT AI Lab (of myth and lore) consisting of dozens of interlinked computers and other hardware. It normally runs the ITS operating system, with 400 software projects recovered from MIT tape archives. You can also boot into TOPS-10, DEC's own operating system, with its own storied history. That would be pdpcontrol start 2.
-
-![image](https://user-images.githubusercontent.com/7725197/209852125-55c81735-f8c0-4956-8ba1-e912d53338ec.png)
+<br>
+![image](https://obsolescence.dev/images/pidp10/PiDP-10_130127.jpg)
+<br>
 
 
 ## 1. Quick install & lookaround
