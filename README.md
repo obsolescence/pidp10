@@ -7,12 +7,11 @@ Work in progress, supporting the PiDP-10 replica.
 
 Main web sites:
 
-https://obsolescence.dev/pidp10 
-- Overview & context
+https://obsolescence.dev/pidp10 - Overview & context
 
-https://obsolescence.wixsite.com/obsolescence/pidp10
-- Details on how to build & use
+https://obsolescence.wixsite.com/obsolescence/pidp10 - Details on how to build & use
 
+The core components in to the PiDP-10 project are Lars Brinkhoff's ITS Reconstruction Project (https://github.com/PDP-10/its) and Richard Cornwell's simh simulators (https://github.com/rcornwell/sims).
 
 ## 0. What is this?
 
