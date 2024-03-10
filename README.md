@@ -55,12 +55,12 @@ Two control scripts regulate the PDP-10:
 > If run with command line arguments, start up peripheral simulators. So `pdp con` will get you the Teletype, `pdp tvcon` the Knight terminal, `pdp vt52` a - well, vt52. Do `pdp ?` for all options.
 
 
-## 3. Installing on a regular Linux X86/64 system instead of a Pi
+## 3. Installing on a Linux X86/64 system instead of a Pi
 
-The project will actually run just fine on a Linux laptop instead of a Pi. There is only one thing to do: after running the install script, **untar the X86 binaries in /opt/pidp10/bin**. They will overwrite the Pi binaries and that is all you need to do. Not elegant, very effective.
+The project will actually run just fine on a Linux laptop instead of a Pi. There is only one thing to do: after running the install script, **untar the X86 binaries in /opt/pidp10/bin**. They will overwrite the Pi binaries and that is all you need to do. Not elegant, but effective.
 
 
-## 4. Using terminal simulators on a Linux laptop to connect with the PiDP-10
+## 4. Using terminals on a Linux laptop to connect with the PiDP-10
 
 Install the project on your X86 Linux machine as per section 3 above. Then, edit the /opt/pip10/bin/pdp.sh script, and where it says 'localhost', change that to raspberrypi.local, or whatever name you gave the Pi. You might want to save the edited script a different name, pdp-remote.sh or somesuch. `./pdp-remote.sh tvcon` will then connect your Knight TV to the PiDP-10.
 
@@ -85,10 +85,10 @@ Please note that `pdpcontrol` and `pdp` interact with the PDP-10 engine, but are
 
 ## 4. Exploring the AI Labs playground
 
-See the two main project web sites mentioned at the top of the page.
+See the two main project web sites mentioned at the top of the page to explore the system.
 
 **Source code and hacking about**
-Assuming you let the installer run though all its options, you will find nearly a dozen software projects (the PDP-10, the terminals, the hooked-up other computers from the AI Lab). Edit-compile-run, and install your enhanced binaries in /opt/pidp10 once you are satisfied. Note that almost all these tools are projects stored here as live git submodules.
+<br>Assuming you let the installer run though all its options, you will find nearly a dozen software projects (the PDP-10, the terminals, the hooked-up other computers from the AI Lab). Edit-compile-run, and install your enhanced binaries in /opt/pidp10 once you are satisfied. Note that almost all these tools are projects stored here as live git submodules.
 <br>`pidp10/src/panama5`: source code for a modified Richard Cornwell's PDP-10 simulator. Use make X86=1 if you do not have a PiDP-10 front panel, it will run fine. 
 	The Panama5 version is temporary, Richard wants to roll the front panel driver back into his original PDP-10/KA10 github at https://github.com/rcornwell/sims
 <br>`pidp10/src/its`: the heart of the ITS beast. 
