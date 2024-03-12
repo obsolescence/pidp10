@@ -271,7 +271,7 @@ read_sw()
                 break;
 
         case 3: /* Momentary switches */
-                for (col = 0; col < 8; col++) {
+                for (col = 0; col < 10; col++) {
                     int state = (sw & (1 << col)) == 0;
                     debounce_sw(state, col);
                 }
@@ -452,7 +452,7 @@ void *blink(void *ptr)
        /* If running, check for switch changes */
        if (par_stop) {
            /* Process all momentary switches */
-           for (col = 0; col < 12; col++) {
+           for (col = 0; col < 10; col++) {
                if (switch_state[col].changed && switch_state[col].state) {
                   switch_state[col].changed = 0;
                   switch (col) {
@@ -499,7 +499,7 @@ void *blink(void *ptr)
        }
        /* Process switch changes if running */
        if (RUN) {
-            for (col = 0; col < 12; col++) {
+            for (col = 0; col < 10; col++) {
                 if (switch_state[col].changed && switch_state[col].state) {
                    /* If repeat switch set, trigger timer */
                    if (repeat_sw) {
@@ -509,6 +509,7 @@ void *blink(void *ptr)
                    case 1:    /* Examine this */
                               examine_sw = 1;
                               MI_flag = 0;
+                              switch_state[col].changed = 0;
                               break;
 
                    case 0:    /* Examine next */
@@ -517,10 +518,12 @@ void *blink(void *ptr)
                    case 7:    /* ReadIN */
                    case 8:    /* Deposit next */
                    default:
+                              switch_state[col].changed = 0;
                               break;
 
                    case 2:    /* Execute function */
                               xct_sw = 1;
+                              switch_state[col].changed = 0;
                               break;
 
                    case 3:    /* Reset function */
@@ -529,14 +532,15 @@ void *blink(void *ptr)
 
                    case 4:    /* Stop function */
                               stop_sw = 1;
+                              switch_state[col].changed = 0;
                               break;
 
                    case 9:    /* Deposit this */
                               deposit_sw = 1;
                               MI_flag = 0;
+                              switch_state[col].changed = 0;
                               break;
                    }
-                   switch_state[col].changed = 0;
                 }
             }
        }
@@ -605,7 +609,7 @@ vm_read(char *cptr, int32 sz, FILE *file)
            }
 
            /* Process switches */
-           for (col = 0; col < 12; col++) {
+           for (col = 0; col < 10; col++) {
                 if (switch_state[col].changed && switch_state[col].state) {
                     /* If repeat switch set, trigger timer */
                     if (repeat_sw) {

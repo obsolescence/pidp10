@@ -4505,6 +4505,7 @@ if ((reason = build_dev_tab ()) != SCPE_OK)            /* build, chk dib_tab */
     if (stop_sw) {    /* Stop switch set */
         RUN = 0;
         stop_sw = 0;
+        reason = STOP_HALT;
     }
     if (sing_inst_sw) {  /* Handle Front panel single instruction */
         instr_count = 1;
