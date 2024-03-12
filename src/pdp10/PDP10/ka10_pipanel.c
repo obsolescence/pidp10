@@ -259,20 +259,20 @@ read_sw()
         switch (row) {
         default:
         case 0:
-                SW = (SW & SR_MASK1) | ((sw << SR_V_0) & SR_MASK0);
+                SW = (SW & SR_MASK1) | ((~sw << SR_V_0) & SR_MASK0);
                 break;
 
         case 1:
-                SW = (SW & SR_MASK0) | ((sw << SR_V_1) & SR_MASK1);
+                SW = (SW & SR_MASK0) | ((~sw << SR_V_1) & SR_MASK1);
                 break;
 
         case 2:
-                new_as = (t_addr)(sw << MA_SW_V_3) & MA_SW_MASK3;
+                new_as = (t_addr)(~sw << MA_SW_V_3) & MA_SW_MASK3;
                 break;
 
         case 3: /* Momentary switches */
                 for (col = 0; col < 8; col++) {
-                    int state = (sw & (1 << col)) != 0;
+                    int state = (sw & (1 << col)) == 0;
                     debounce_sw(state, col);
                 }
                 break;
@@ -280,18 +280,18 @@ read_sw()
         case 4:
 #if KA | KI
                 adr_cond = 0;
-                adr_cond |= ((sw & INST_FETCH) != 0) ? ADR_IFETCH : 0;
-                adr_cond |= ((sw & DATA_FETCH) != 0) ? ADR_DFETCH : 0;
-                adr_cond |= ((sw & WRITE_SW) != 0) ? ADR_WRITE : 0;
-                adr_cond |= ((sw & ADR_STOP_SW) != 0) ? ADR_STOP : 0;
-                adr_cond |= ((sw & ADR_BRK_SW) != 0) ? ADR_BREAK : 0;
-                nxm_stop = (sw & NXM_STOP) != 0;
+                adr_cond |= ((sw & INST_FETCH) == 0) ? ADR_IFETCH : 0;
+                adr_cond |= ((sw & DATA_FETCH) == 0) ? ADR_DFETCH : 0;
+                adr_cond |= ((sw & WRITE_SW) == 0) ? ADR_WRITE : 0;
+                adr_cond |= ((sw & ADR_STOP_SW) == 0) ? ADR_STOP : 0;
+                adr_cond |= ((sw & ADR_BRK_SW) == 0) ? ADR_BREAK : 0;
+                nxm_stop = (sw & NXM_STOP) == 0;
 #endif         
-                sing_inst_sw = (sw & SING_INST) != 0;
+                sing_inst_sw = (sw & SING_INST) == 0;
                 /* PAR_STOP handle special features */
-                par_stop = (sw & PAR_STOP) != 0;
+                par_stop = (sw & PAR_STOP) == 0;
                 /* SING_CYCL no function yet */
-                repeat_sw = (sw & REP_SW) != 0;
+                repeat_sw = (sw & REP_SW) == 0;
                 break;
         }
     }
@@ -303,7 +303,6 @@ void *blink(void *ptr)
     int        *terminate = (int *)ptr;
     int        col, row, i;
     int        num_gpios, ret;
- //   uint32     gpiomask[(MAX_GPIO_PINS + 31)/32] = { 0 };
     uint32     leds;
     t_addr     new_as;
     struct timespec spec;
@@ -326,8 +325,6 @@ void *blink(void *ptr)
         sim_messagef(SCPE_IERR, "No GPIO chips found\n");
         return (void *)-1;
     }
-
-//    memset(gpiomask, 0xff, sizeof(gpiomask));
 
     ret = gpiolib_mmap();
     if (ret) {
