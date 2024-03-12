@@ -68,6 +68,8 @@ case $yn in
 	sudo apt-get -y install expect
         # Install screen
         sudo apt-get install -y screen
+	# Install Tilix, used for pdp view
+	sudo apt -y install tilix
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;

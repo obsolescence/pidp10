@@ -10,6 +10,10 @@ if [ $# -eq 0 ]; then
 
 else
 	case $1 in
+		view)
+			//nohup /opt/pidp10/bin/sty > /dev/null 2>&1 &
+			nohup tilix -s /opt/pidp10/install/view.json > /dev/null 2>&1 &
+			;;
 		con)
 			//nohup /opt/pidp10/bin/sty > /dev/null 2>&1 &
 			nohup /opt/pidp10/bin/sty -e telnet localhost 1025 > /dev/null 2>&1 &
