@@ -70,6 +70,8 @@ case $yn in
         sudo apt-get install -y screen
 	# Install Tilix, used for pdp view
 	sudo apt -y install tilix
+    sudo apt -y install dconf-editor dconf-cli
+    dconf load /com/gexperts/Tilix/ </opt/pidp10/install/pidp10tilix.conf
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
