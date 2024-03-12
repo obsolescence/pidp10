@@ -123,6 +123,7 @@ int           rep_count;  /* Count down to repeat trigger */
 #define PROG_STOP_LAMP       0040000
 #define USER_LAMP            0100000
 #define MEM_STOP_LAMP        0200000
+#define PWR_LAMP             0400000
 
 /* led row 6 */
 #define PI_REQ_MASK6         0177
@@ -131,7 +132,6 @@ int           rep_count;  /* Count down to repeat trigger */
 #define PI_PRO_V_6           7            /* left */
 #define RUN_LAMP             0040000
 #define PION_LAMP            0100000
-#define PWR_LAMP             0200000
 
 /* switch row 0 */
 #define SR_MASK0             LMASK
@@ -402,7 +402,8 @@ void *blink(void *ptr)
                     break;
 
             case 5:
-                    leds = (IOB_PI & PI_IOB_MASK5) << PI_IOB_V_5;
+                    leds = PWR_LAMP;
+                    leds |= (IOB_PI & PI_IOB_MASK5) << PI_IOB_V_5;
                     leds |= (PIE & PI_ENB_MASK5) << PI_ENB_V_5;
                     leds |= (FLAGS & USER) ? USER_LAMP : 0;
                     leds |= (prog_stop) ? PROG_STOP_LAMP: 0;
@@ -410,7 +411,6 @@ void *blink(void *ptr)
                     break;
 
             case 6:
-                    leds = PWR_LAMP;
                     leds |= (RUN) ? RUN_LAMP : 0;
                     leds |= (pi_enable) ? PION_LAMP : 0;
                     leds |= (PIR & PI_REQ_MASK6) << PI_REQ_V_6;
