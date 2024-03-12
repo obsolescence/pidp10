@@ -51,7 +51,7 @@ Two control scripts regulate the PDP-10:
 > The relevant boot numbers: 0 = blinkenlights demo, 1 = boot ITS, 2 = boot TOPS-10.
 
 - **pdp**: if run without any command line arguments, inspect the simulation engine. Enter `CTRL-A` `d` to exit again.
-> If run with command line arguments, start up peripheral simulators. So `pdp con` will get you the Teletype, `pdp tvcon` the Knight terminal, `pdp vt52` a - well, vt52. Do `pdp ?` for all options.
+> If run with command line arguments, start up peripheral simulators. So `pdp con` will get you the Teletype, `pdp tvcon` the Knight terminal, `pdp vt52` a - well, vt52. `pdp view` is a nice all-in one setup. Do `pdp ?` for all options.
 
 
 ## 3. Installing on a Linux X86/64 system instead of a Pi
