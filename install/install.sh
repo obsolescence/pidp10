@@ -131,7 +131,8 @@ case $ynx in
 		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
 		case $yn in
 			[Pp]* ) 
-				cp /opt/pidp10/bin/pidp10.panama /opt/pidp10/bin/pidp10 
+				echo copying pidp10.panama to pidp10
+				cp /opt/pidp10/bin/pidp10.panama /opt/pidp10/bin/pidp10
 				# make sure pidp10 simulator has the right privileges
 				# to access GPIO with root privileges:
 				sudo chmod +s /opt/pidp10/bin/pidp10
@@ -139,7 +140,8 @@ case $ynx in
 				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
 				;;
 			[Cc]* ) 
-				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10 
+				echo copying pdp10-ka to pidp10
+				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10
 				# make sure pidp10 simulator has the right privileges
 				# to access GPIO with root privileges:
 				sudo chmod +s /opt/pidp10/bin/pidp10
@@ -147,7 +149,7 @@ case $ynx in
 				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
 				;;
 			[Ll]* ) 
-				echo --> Leaving things untouched from how they were
+				echo Leaving things untouched from how they were
 				;;
 			* ) 
 				echo "Please answer p,c, or in case of doubt, l."
@@ -319,9 +321,9 @@ case $yn in
 		# wall paper
 		pcmanfm --set-wallpaper /opt/pidp10/install/turist.png --wallpaper-mode=fit
 		# desktop files in Pi menu
-		copy /opt/pidp10/install/desktop-files ~/local/share/applications 
+		cp /opt/pidp10/install/desktop-files/* ~/.local/share/applications/
 		# pdp view as icon on the desktop
-		copy /opt/pidp10/install/desktop-files/view* ~/Desktop/ 
+		cp /opt/pidp10/install/desktop-files/view* ~/Desktop/
 		;;
 	[Nn]* ) ;;
 	* ) echo "Please answer yes or no.";;
