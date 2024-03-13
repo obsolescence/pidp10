@@ -16,6 +16,25 @@ if [ ! -d "/opt/pidp10" ]; then
     exit 1
 fi
 
+echo
+echo
+echo PiDP-10 install script
+echo ======================
+echo This script is minimally invasive to your Linux. All it does outside
+echo its own directory is, if you allow, \(a\) make 2 links in \/usr\/bin and
+echo \(b\) add \'pdpcontrol\' to your \~\/.profile
+echo
+echo The script can be re-run later on to add the source code and its 
+echo dependencies. Re-running the script and answering \'n\' to questions
+echo will leave those things unchanged. So it will *not* undo anything
+echo that is already installed.
+echo
+echo Too Long, Didn\'t Read?
+echo Just say Yes to everything except say No to \'install source code\'
+echo and to \'install source code dependencies\'. 
+echo
+echo
+
 read -p "Set required access privileges to pidp10 simulator? " yn
 case $yn in
     [Yy]* )
@@ -100,9 +119,79 @@ esac
 
 
 # ---------------------------
+# allow fall-back to old Panama 5 simulator
+# ---------------------------
+
+read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
+case $ynx in
+	[Yy]* ) 
+		echo --> Leaving things untouched
+		;;
+	[Nn]* ) 
+		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
+		case $yn in
+			[Pp]* ) 
+				cp /opt/pidp10/bin/pidp10.panama /opt/pidp10/bin/pidp10 
+				# make sure pidp10 simulator has the right privileges
+				# to access GPIO with root privileges:
+				sudo chmod +s /opt/pidp10/bin/pidp10
+				# to run a RT thread:
+				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
+				;;
+			[Cc]* ) 
+				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10 
+				# make sure pidp10 simulator has the right privileges
+				# to access GPIO with root privileges:
+				sudo chmod +s /opt/pidp10/bin/pidp10
+				# to run a RT thread:
+				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
+				;;
+			[Ll]* ) 
+				echo --> Leaving things untouched from how they were
+				;;
+			* ) 
+				echo "Please answer p,c, or in case of doubt, l."
+				;;
+		esac
+		;;
+	* ) 
+		echo "Please answer yes or no."
+		;;
+esac
+
+
+# ---------------------------
+# install source code of Richard Cornwell's PDP-10 emulators
+# ---------------------------
+read -p "Download PDP-10 emulator source code? " yn
+case $yn in
+    [Yy]* ) 
+        cd /opt/pidp10/src
+        git clone https://github.com/rcornwell/pidp10
+        # 20240312 delete duplicate files in Richard's pidp10 fork, we want the emulator
+	# and not a duplicate of all the other pidp10 files, that we already have
+        cd /opt/pidp10/src/pidp10
+	rm -r systems
+	rm -r install
+	rm -r bin
+	rm -r panama5
+	rm -r pidp10-test
+	rm -r scansw10
+	rm -r sty33
+        #git submodule sync
+        #git submodule update --init --recursive
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
+
+
+
+
+# ---------------------------
 # install Lars Brinkhoff's full ITS project
 # ---------------------------
-read -p "Do you wish to download ITS project source code? " yn
+read -p "Download ITS project source code? " yn
 case $yn in
     [Yy]* ) 
         cd /opt/pidp10/src
@@ -223,15 +312,19 @@ esac
 # ---------------------------
 # Do you wish to add a DEC flavour to the desktop?
 # ---------------------------
-read -p "Add optional DEC flavoured wallpaper? " yn
+echo If you are not installing on a Pi, say No:
+read -p "Add a DEC flavour to the Pi's desktop? " yn
 case $yn in
-    [Yy]* ) 
-        # wall paper
-        pcmanfm --set-wallpaper /opt/pidp10/install/turist.png --wallpaper-mode=fit
-
-            ;;
-    [Nn]* ) ;;
-        * ) echo "Please answer yes or no.";;
+	[Yy]* ) 
+		# wall paper
+		pcmanfm --set-wallpaper /opt/pidp10/install/turist.png --wallpaper-mode=fit
+		# desktop files in Pi menu
+		copy /opt/pidp10/install/desktop-files ~/local/share/applications 
+		# pdp view as icon on the desktop
+		copy /opt/pidp10/install/desktop-files/view* ~/Desktop/ 
+		;;
+	[Nn]* ) ;;
+	* ) echo "Please answer yes or no.";;
 esac
 
 echo
