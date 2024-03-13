@@ -63,8 +63,8 @@ else
 			;;
 		*)
 			echo options are: 
-			echo  [con telcon vt52 vt05 tv11 tvcon imlac tek dp3300 pdp6 type340 gt40 tv11-tty pdp6-tty]
-			echo run without options, 
+			echo  [view con telcon vt52 vt05 tvcon imlac tek dp3300 pdp6 type340 gt40 tv11-tty pdp6-tty]
+			echo when run without options, 
 			echo  pdp brings you into simh - Ctrl-A d to leave
 			;;
 	esac
