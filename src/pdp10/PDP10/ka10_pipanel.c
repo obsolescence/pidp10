@@ -97,23 +97,12 @@ int           rep_count;  /* Count down to repeat trigger */
 #define IND_LAMP             020
 #define AC_MASK3             017
 #define AC_V_3               5            /* left */
-#define IR_MASK3             0x777        /* 0-9 */
+#define IR_MASK3             0777         /* 0-9 */
 #define IR_V_3               9            /* left */
 
 /* led row 4 */
 #define PC_MASK4             RMASK        /* 18-35 */
 #define PC_V_4               0            /* right */
-
-#define MB_MASK2             0x0000000f  /* 32-35 */
-#define MB_V_2               12          /* Left */
-#define PI_LAMP              0x0400
-#define MI_LAMP              0x0800
-
-/* led row 4 */
-#define IX_MASK4             3
-#define IX_V_4               14           /* left */
-#define MA_MASK4             0x3fff0
-#define MA_V_4               4            /* Right */
 
 /* led row 5 */
 #define PI_IOB_MASK5         0177
@@ -132,14 +121,16 @@ int           rep_count;  /* Count down to repeat trigger */
 #define PI_PRO_V_6           7            /* left */
 #define RUN_LAMP             0040000
 #define PION_LAMP            0100000
+#define PI_LAMP              0200000
+#define MI_LAMP              0400000
 
 /* switch row 0 */
-#define SR_MASK0             LMASK
-#define SR_V_0               18          /* Left */
+#define SR_MASK0             RMASK
+#define SR_V_0               0           /* Left */
 
 /* switch row 1 */
-#define SR_MASK1             RMASK
-#define SR_V_1               0           /* Left */
+#define SR_MASK1             LMASK
+#define SR_V_1               18          /* Left */
 
 /* Switch row 2 */
 #define MA_SW_MASK3          RMASK
@@ -411,10 +402,11 @@ void *blink(void *ptr)
                     break;
 
             case 6:
-                    leds |= (RUN) ? RUN_LAMP : 0;
+                    leds = (RUN) ? RUN_LAMP : 0;
                     leds |= (pi_enable) ? PION_LAMP : 0;
                     leds |= (PIR & PI_REQ_MASK6) << PI_REQ_V_6;
                     leds |= (PIH & PI_PRO_MASK6) << PI_PRO_V_6;
+		    leds |= (MI_flag) ? PI_LAMP : MI_LAMP;
                     break;
             }
 
@@ -624,9 +616,9 @@ vm_read(char *cptr, int32 sz, FILE *file)
 
                     case 1:      /* Examine this */
                             AB = AS;
-                            MB = (AB < 020) ? FM[AB] : M[AB];
-                            MB = M[AB];
+                            MB = (AS < 020) ? FM[AS] : M[AS];
                             MI_flag = 0;
+			   printf("Examime %06o %012llo\r\n", AS, SW);
                             break;
 
                     case 2:      /* Execute function */
@@ -708,12 +700,13 @@ vm_read(char *cptr, int32 sz, FILE *file)
 
                     case 9:      /* Deposit this */
                            AB = AS;
-                           if (AB < 020) {
-                               FM[AB] = SW;
-                               MB = FM[AB];
+			   printf("Deposit %06o %012llo\r\n", AS, SW);
+                           if (AS < 020) {
+                               FM[AS] = SW;
+                               MB = FM[AS];
                            } else {
-                               M[AB] = SW;
-                               MB = M[AB];
+                               M[AS] = SW;
+                               MB = M[AS];
                            }
                            MI_flag = 0;
                            break;

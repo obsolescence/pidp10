@@ -4484,13 +4484,13 @@ if ((reason = build_dev_tab ()) != SCPE_OK)            /* build, chk dib_tab */
 #if PIDP10
     if (examine_sw) {   /* Examine memory switch */
         AB = AS;
-        (void)Mem_read(1, 0, 0, 0);
+        (void)Mem_read_nopage();
         examine_sw = 0;
     }
     if (deposit_sw) {   /* Deposit memory switch */
         AB = AS;
         MB = SW;
-        (void)Mem_write(1, 0);
+        (void)Mem_write_nopage();
         deposit_sw = 0;
     }
     if (xct_sw) {    /* Handle Front panel xct switch */
