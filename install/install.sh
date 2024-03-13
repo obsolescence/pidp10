@@ -34,6 +34,10 @@ echo Just say Yes to everything except say No to \'install source code\'
 echo and to \'install source code dependencies\'. 
 echo
 echo
+echo NEW SIMULATOR VERSION FROM RICHARD CORNWELL
+echo boot sequence for ITS is now: press STOP, press READ IN, go to the
+echo Teletype and enter ITS\<enter\>\<esc\>G
+echo
 
 read -p "Set required access privileges to pidp10 simulator? " yn
 case $yn in

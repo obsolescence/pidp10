@@ -106,6 +106,10 @@ set imx channel=74;unit3;axis3
 ; unsolved
 ; ------------
 
+; 20240313 new simulator
+; ----------------------
+; set boot device number on maintenance panel
+dep readin 104
 
 ; ----------------------------------------------------------------
 ; so the user has a PiDP-10 front panel and should press READ IN before
