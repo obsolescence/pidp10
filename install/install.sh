@@ -169,10 +169,11 @@ esac
 # ---------------------------
 # install source code of Richard Cornwell's PDP-10 emulators
 # ---------------------------
-read -p "Download PDP-10 emulator source code? " yn
+read -p "Download Richard Cornwell's PDP-10 emulator source code? " yn
 case $yn in
     [Yy]* ) 
         cd /opt/pidp10/src
+	rm -r pidp10
         git clone https://github.com/rcornwell/pidp10
         # 20240312 delete duplicate files in Richard's pidp10 fork, we want the emulator
 	# and not a duplicate of all the other pidp10 files, that we already have
@@ -197,7 +198,7 @@ esac
 # ---------------------------
 # install Lars Brinkhoff's full ITS project
 # ---------------------------
-read -p "Download ITS project source code? " yn
+read -p "Download Lars Brinkhoff's ITS project source code? " yn
 case $yn in
     [Yy]* ) 
         cd /opt/pidp10/src
