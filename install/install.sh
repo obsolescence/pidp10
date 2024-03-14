@@ -173,7 +173,7 @@ read -p "Download Richard Cornwell's PDP-10 emulator source code? " yn
 case $yn in
     [Yy]* ) 
         cd /opt/pidp10/src
-	rm -r pidp10
+	rm -rf pidp10
         git clone https://github.com/rcornwell/pidp10
         # 20240312 delete duplicate files in Richard's pidp10 fork, we want the emulator
 	# and not a duplicate of all the other pidp10 files, that we already have
@@ -202,6 +202,7 @@ read -p "Download Lars Brinkhoff's ITS project source code? " yn
 case $yn in
     [Yy]* ) 
         cd /opt/pidp10/src
+	rm -rf its 
         git clone https://github.com/PDP-10/its.git
         # get all the submodules (vt05, tektronix, etc)
         cd its
