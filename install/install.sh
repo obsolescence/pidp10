@@ -79,21 +79,15 @@ case $yn in
         # update first...
         sudo apt-get update
         # for simh:
-	sudo apt install -y libpcre3
-        sudo apt install -y libsdl2-image-dev
-        sudo apt install -y libsdl2-net-dev
-	sudo apt install -y libvdeplug2
-	sudo apt install -y libpcap-dev
+	sudo apt install -y libpcre3 libsdl2-image-dev libsdl2-net-dev libvdeplug2 libpcap-dev
 	#the Pi does not come with telnet installed, so --
-        sudo apt-get install -y telnet
-        sudo apt-get install -y telnetd
+        sudo apt-get install -y telnet telnetd
 	# for pdpcontrol:
 	sudo apt-get -y install expect
         # Install screen
         sudo apt-get install -y screen
 	# Install Tilix, used for pdp view
-	sudo apt -y install tilix
-	sudo apt -y install dconf-editor dconf-cli
+	sudo apt -y install tilix dconf-editor dconf-cli
 	dconf load /com/gexperts/Tilix/ </opt/pidp10/install/pidp10tilix.conf
         ;;
     [Nn]* ) ;;
@@ -222,16 +216,13 @@ case $yn in
         # for its install process:
         sudo apt-get -y install autoconf
         # for graphics options in simh:
-        sudo apt-get -y install libsdl2-dev
-        sudo apt-get install -y libgtk-3-dev
+        sudo apt-get -y install libsdl2-dev libgtk-3-dev
         # for simh:
-	sudo apt install -y libpcre3-dev
-	sudo apt install -y libvdeplug2
+	sudo apt install -y libpcre3-dev libvdeplug2
 	# addl from Lars' its/build/dependencies script
 	sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
 	# for networking support in simh:
-        sudo apt-get install -y libpcap-dev
-        sudo apt-get install -y libvdeplug-dev
+        sudo apt-get install -y libpcap-dev libvdeplug-dev
         #Install readline, used for command-line editing in simh
         sudo apt-get install -y libreadline-dev
         #the above might be superceded by the one below now - at least for the Pi
@@ -241,8 +232,7 @@ case $yn in
 	# this one I'm not sure of --
 	sudo apt install -y libx11-dev libxt-dev	//not xft, fixed
 	#
-	sudo apt-get install -y libsdl2-mixer-dev
-	sudo apt-get install -y libsdl2-ttf-dev
+	sudo apt-get install -y libsdl2-mixer-dev libsdl2-ttf-dev
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
