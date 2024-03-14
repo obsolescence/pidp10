@@ -24,14 +24,14 @@ echo This script is minimally invasive to your Linux. All it does outside
 echo its own directory is, if you allow, \(a\) make 2 links in \/usr\/bin and
 echo \(b\) add \'pdpcontrol\' to your \~\/.profile
 echo
-echo The script can be re-run later on to add the source code and its 
+echo The script can be re-run later on to add the source code and its
 echo dependencies. Re-running the script and answering \'n\' to questions
 echo will leave those things unchanged. So it will *not* undo anything
 echo that is already installed.
 echo
 echo Too Long, Didn\'t Read?
 echo Just say Yes to everything except say No to \'install source code\'
-echo and to \'install source code dependencies\'. 
+echo and to \'install source code dependencies\'.
 echo
 echo
 echo NEW SIMULATOR VERSION FROM RICHARD CORNWELL
@@ -43,7 +43,7 @@ read -p "Set required access privileges to pidp10 simulator? " yn
 case $yn in
     [Yy]* )
 	    # make sure that the directory does not have root ownership
-	    # (in case the user did a simple git clone instead of 
+	    # (in case the user did a simple git clone instead of
 	    #  sudo -u pi git clone...)
 	    myusername=$(whoami)
 	    mygroup=$(id -g -n)
@@ -64,7 +64,7 @@ esac
 # ---------------------------
 read -p "Copy control script links (pdpcontrol, pdp) to /usr/local/bin? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
 	    sudo ln -i -s /opt/pidp10/bin/pdp.sh /usr/local/bin/pdp
 	    sudo ln -i -s /opt/pidp10/bin/pdpcontrol.sh /usr/local/bin/pdpcontrol
         ;;
@@ -75,7 +75,7 @@ esac
 
 read -p "Install required dependencies for running the PiDP-10? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
         # update first...
         sudo apt-get update
         # for simh:
@@ -87,7 +87,7 @@ case $yn in
 	#the Pi does not come with telnet installed, so --
         sudo apt-get install -y telnet
         sudo apt-get install -y telnetd
-	# for pdpcontrol: 
+	# for pdpcontrol:
 	sudo apt-get -y install expect
         # Install screen
         sudo apt-get install -y screen
@@ -106,7 +106,7 @@ esac
 # ---------------------------
 read -p "Download and install required disk images? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
         echo -----------------------
         echo Downloading PDP-10 ITS disk images
         wget -P /opt/pidp10/systems/its https://pidp.net/pidp10-sw/its-system.zip
@@ -128,13 +128,13 @@ esac
 
 read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
 case $ynx in
-	[Yy]* ) 
+	[Yy]* )
 		echo --> Leaving things untouched
 		;;
-	[Nn]* ) 
+	[Nn]* )
 		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
 		case $yn in
-			[Pp]* ) 
+			[Pp]* )
 				echo copying pidp10.panama to pidp10
 				cp /opt/pidp10/bin/pidp10.panama /opt/pidp10/bin/pidp10
 				# make sure pidp10 simulator has the right privileges
@@ -143,7 +143,7 @@ case $ynx in
 				# to run a RT thread:
 				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
 				;;
-			[Cc]* ) 
+			[Cc]* )
 				echo copying pdp10-ka to pidp10
 				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10
 				# make sure pidp10 simulator has the right privileges
@@ -152,10 +152,10 @@ case $ynx in
 				# to run a RT thread:
 				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
 				;;
-			[Ll]* ) 
+			[Ll]* )
 				echo Leaving things untouched from how they were
 				;;
-			* ) 
+			* )
 				echo "Please answer p,c, or in case of doubt, l."
 				;;
 		esac
@@ -171,7 +171,7 @@ esac
 # ---------------------------
 read -p "Download PDP-10 emulator source code? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
         cd /opt/pidp10/src
         git clone https://github.com/rcornwell/pidp10
         # 20240312 delete duplicate files in Richard's pidp10 fork, we want the emulator
@@ -199,7 +199,7 @@ esac
 # ---------------------------
 read -p "Download ITS project source code? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
         cd /opt/pidp10/src
         git clone https://github.com/PDP-10/its.git
         # get all the submodules (vt05, tektronix, etc)
@@ -214,7 +214,7 @@ esac
 
 read -p "Install add'l dependencies for compiling the source code? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
         # update first...
         sudo apt-get update
         # for its install process:
@@ -239,8 +239,8 @@ case $yn in
 	# this one I'm not sure of --
 	sudo apt install -y libx11-dev libxt-dev	//not xft, fixed
 	#
-	sudo apt-get install -y libsdl2-mixer-dev  
-	sudo apt-get install -y libsdl2-ttf-dev  
+	sudo apt-get install -y libsdl2-mixer-dev
+	sudo apt-get install -y libsdl2-ttf-dev
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
@@ -252,7 +252,7 @@ esac
 # ---------------------------
 read -p "Let raspi-config enable i2c, VNC? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
 	# enable I2C on the Pi
 	sudo raspi-config nonint do_i2c 0
 	# enable vnc
@@ -282,7 +282,7 @@ append_to_file() {
 
 read -p "Automatically start the PiDP-10 core when logging in? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
 	echo testing for .profile or otherwise, .bash_profile
 	if [ -f "$HOME/.profile" ]; then
 		echo .profile found
@@ -305,7 +305,7 @@ esac
 # ---------------------------
 read -p "Install Teletype font? " yn
 case $yn in
-    [Yy]* ) 
+    [Yy]* )
         mkdir ~/.fonts
         cp /opt/pidp10/install/TELETYPE1945-1985.ttf ~/.fonts/
 	fc-cache -v -f
@@ -321,7 +321,7 @@ esac
 echo If you are not installing on a Pi, say No:
 read -p "Add a DEC flavour to the Pi's desktop? " yn
 case $yn in
-	[Yy]* ) 
+	[Yy]* )
 		# wall paper
 		pcmanfm --set-wallpaper /opt/pidp10/install/turist.png --wallpaper-mode=fit
 		# desktop files in Pi menu
