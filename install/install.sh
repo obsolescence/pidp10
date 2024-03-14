@@ -83,11 +83,11 @@ case $yn in
 	#the Pi does not come with telnet installed, so --
         sudo apt-get install -y telnet telnetd
 	# for pdpcontrol:
-	sudo apt-get -y install expect
+	sudo apt-get install -y expect
         # Install screen
         sudo apt-get install -y screen
 	# Install Tilix, used for pdp view
-	sudo apt -y install tilix dconf-editor dconf-cli
+	sudo apt install -y tilix dconf-editor dconf-cli
 	dconf load /com/gexperts/Tilix/ </opt/pidp10/install/pidp10tilix.conf
         ;;
     [Nn]* ) ;;
@@ -214,9 +214,9 @@ case $yn in
         # update first...
         sudo apt-get update
         # for its install process:
-        sudo apt-get -y install autoconf
+        sudo apt-get install -y autoconf
         # for graphics options in simh:
-        sudo apt-get -y install libsdl2-dev libgtk-3-dev
+        sudo apt-get install -y libsdl2-dev libgtk-3-dev
         # for simh:
 	sudo apt install -y libpcre3-dev libvdeplug2
 	# addl from Lars' its/build/dependencies script
