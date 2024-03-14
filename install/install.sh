@@ -129,7 +129,7 @@ esac
 read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
 case $ynx in
 	[Yy]* )
-		echo --> Leaving things untouched
+		echo "--> Leaving things untouched"
 		;;
 	[Nn]* )
 		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
