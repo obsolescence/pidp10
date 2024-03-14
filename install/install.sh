@@ -173,6 +173,8 @@ read -p "Download PDP-10 emulator source code? " yn
 case $yn in
     [Yy]* )
         cd /opt/pidp10/src
+        # clean up the git source directory if it already exists
+        if [ -d /opt/pidp10/src/pidp10 ]; then rm -rf /opt/pidp10/src/pidp10; fi
         git clone https://github.com/rcornwell/pidp10
         # 20240312 delete duplicate files in Richard's pidp10 fork, we want the emulator
 	# and not a duplicate of all the other pidp10 files, that we already have
