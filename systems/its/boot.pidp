@@ -51,7 +51,7 @@ at -u mty line=8,10017 speed=9600
 at -u mty line=7,10016;notelnet speed=50000
 at -u mty line=6,10015 speed=9600
 set ten11 enabled
-at ten11 10011
+at -u ten11 10011
 set auxcpu enabled
 at auxcpu 10006
 set imp enabled
