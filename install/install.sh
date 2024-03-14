@@ -160,7 +160,7 @@ case $ynx in
 				;;
 		esac
 		;;
-	* ) 
+	* )
 		echo "Please answer yes or no."
 		;;
 esac
@@ -287,7 +287,6 @@ case $yn in
 	if [ -f "$HOME/.profile" ]; then
 		echo .profile found
 		append_to_file "$HOME/.profile"
-
 	elif [ -f "$HOME/.bash_profile" ]; then
 		echo .bash_profile found
 		append_to_file "$HOME/.bash_profile"
@@ -336,4 +335,3 @@ esac
 echo
 echo Done.
 echo
-
