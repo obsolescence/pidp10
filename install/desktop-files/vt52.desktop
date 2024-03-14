@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=VT-52
+GenericName=PDP-10 Peripheral Manager
+Comment=MAnage PDP-10 peripherals
+Exec=nohup pdp vt52
+Terminal=true
+Type=Application
+Icon=/opt/pidp10/install/desktop-files/vt52.svg
+Categories=X-PDP10;
+StartupNotify=false

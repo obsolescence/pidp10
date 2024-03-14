@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Teletype
+GenericName=PDP-10 Peripheral Manager
+Comment=MAnage PDP-10 peripherals
+Exec=nohup pdp con
+Terminal=true
+Type=Application
+Icon=/opt/pidp10/install/desktop-files/con.svg
+Categories=X-PDP10;
+StartupNotify=false
