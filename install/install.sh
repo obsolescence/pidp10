@@ -181,10 +181,10 @@ case $yn in
 	rm -r systems
 	rm -r install
 	rm -r bin
-	rm -r panama5
-	rm -r pidp10-test
-	rm -r scansw10
-	rm -r sty33
+	rm -r src/panama5
+	rm -r src/pidp10-test
+	rm -r src/scansw10
+	rm -r src/sty33
         #git submodule sync
         #git submodule update --init --recursive
         ;;
