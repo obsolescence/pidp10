@@ -109,11 +109,11 @@ case $yn in
     [Yy]* )
         echo -----------------------
         echo Downloading PDP-10 ITS disk images
-        wget -P /opt/pidp10/systems/its https://pidp.net/pidp10-sw/its-system.zip
+        wget -O /opt/pidp10/systems/its/its-system.zip https://pidp.net/pidp10-sw/its-system.zip
 	unzip -d /opt/pidp10/systems/its /opt/pidp10/systems/its/its-system.zip
         echo -----------------------
         echo Downloading PDP-10 TOPS-10 disk images
-        wget -P /opt/pidp10/systems/tops10-603 https://pidp.net/pidp10-sw/tops603ka.zip
+        wget -O /opt/pidp10/systems/tops10-603/tops603ka.zip https://pidp.net/pidp10-sw/tops603ka.zip
         unzip -d /opt/pidp10/systems/tops10-603 /opt/pidp10/systems/tops10-603/tops603ka.zip
         echo -----------------------
         ;;
