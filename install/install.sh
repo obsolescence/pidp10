@@ -93,8 +93,8 @@ case $yn in
         sudo apt-get install -y screen
 	# Install Tilix, used for pdp view
 	sudo apt -y install tilix
-    sudo apt -y install dconf-editor dconf-cli
-    dconf load /com/gexperts/Tilix/ </opt/pidp10/install/pidp10tilix.conf
+	sudo apt -y install dconf-editor dconf-cli
+	dconf load /com/gexperts/Tilix/ </opt/pidp10/install/pidp10tilix.conf
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
@@ -227,13 +227,13 @@ case $yn in
 	sudo apt install -y libvdeplug2
 	# addl from Lars' its/build/dependencies script
 	sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
-# for networking support in simh:
+	# for networking support in simh:
         sudo apt-get install -y libpcap-dev
         sudo apt-get install -y libvdeplug-dev
         #Install readline, used for command-line editing in simh
         sudo apt-get install -y libreadline-dev
         #the above might be superceded by the one below now - at least for the Pi
-#CHECK!
+	#CHECK!
         sudo apt install -y libedit-dev
 	# for sty:
 	# this one I'm not sure of --
