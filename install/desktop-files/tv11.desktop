@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=TV-11 Core
+GenericName=PDP-10 Peripheral Manager
+Comment=MAnage PDP-10 peripherals
+Exec=lxterminal -e "screen -Dr tv11"
+Terminal=true
+Type=Application
+Icon=/opt/pidp10/install/desktop-files/pdp11.svg
+Categories=X-PDP10;
+StartupNotify=false

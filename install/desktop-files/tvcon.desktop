@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Knight TV
+GenericName=PDP-10 Peripheral Manager
+Comment=MAnage PDP-10 peripherals
+Exec=nohup pdp tvcon
+Terminal=true
+Type=Application
+Icon=/opt/pidp10/install/desktop-files/knight.svg
+Categories=X-PDP10;
+StartupNotify=false
