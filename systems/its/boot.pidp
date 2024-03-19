@@ -7,10 +7,19 @@ SET CONSOLE TELNET=BUFFERED=144
 set cons -u telnet=1025
 echo
 echo use 'telnet localhost 1025' 
-echo or 'pdp con'  or 'pdp telcon' for PDP-10 console
+echo or 'pdp view' or 'pdp con'  or 'pdp telcon' for PDP-10 console
 echo
 echo =====================================================================
 echo
+
+; comment out if you don't want chaosnet started:
+!pgrep cbridge && pkill -2 cbridge && echo stopped old cbridge && sleep 3
+; bug? seems we must be in cbridge home dir:
+cd /opt/pidp10/bin
+!screen -dmS cbridge /opt/pidp10/bin/cbridge /opt/pidp10/bin/cbridge.conf
+cd /opt/pidp10/systems/its
+
+
 ; comment out if you do not want the Knight TV system started:
 ; we start tv11 under screen, so you can reconnect to it for inspection
 !pgrep tv11 && pkill -2 tv11 && echo stopped old tv11 && sleep 3
@@ -39,6 +48,7 @@ set dk disabled
 set stk enabled
 set tk enabled
 at -u tk 10000 speed=300
+;at -u tk line=2,10012
 # 10001 reserved for GE bagbiters, hah.
 set dpk enabled
 at -u dpk 10002 speed=4800
@@ -96,6 +106,12 @@ set imx channel=76;unit3;axis1;negate
 set imx channel=74;unit3;axis3
 
 ; ------------
+; enable chaosnet
+set ch enabled
+set ch node=177002
+set ch peer=localhost:44041
+att ch 44042
+; --------------
 ; just quit on SIGTERM
 ; reason: when you shut down the Pi, the shutdown process hangs 
 ; for 90 seconds waiting for pidp10/simh to end. This fixes that problem:
