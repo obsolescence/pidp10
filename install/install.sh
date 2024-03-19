@@ -109,11 +109,11 @@ case $yn in
     [Yy]* ) 
         echo -----------------------
         echo Downloading PDP-10 ITS disk images
-        wget -P /opt/pidp10/systems/its https://pidp.net/pidp10-sw/its-system.zip
+        wget -O /opt/pidp10/systems/its/its-system.zip https://pidp.net/pidp10-sw/its-system.zip
 	unzip -d /opt/pidp10/systems/its /opt/pidp10/systems/its/its-system.zip
         echo -----------------------
         echo Downloading PDP-10 TOPS-10 disk images
-        wget -P /opt/pidp10/systems/tops10-603 https://pidp.net/pidp10-sw/tops603ka.zip
+        wget -O /opt/pidp10/systems/tops10-603/tops603ka.zip https://pidp.net/pidp10-sw/tops603ka.zip
         unzip -d /opt/pidp10/systems/tops10-603 /opt/pidp10/systems/tops10-603/tops603ka.zip
         echo -----------------------
         ;;
@@ -177,14 +177,13 @@ case $yn in
         git clone https://github.com/rcornwell/pidp10
         # 20240312 delete duplicate files in Richard's pidp10 fork, we want the emulator
 	# and not a duplicate of all the other pidp10 files, that we already have
-        cd /opt/pidp10/src/pidp10
-	rm -r systems
-	rm -r install
-	rm -r bin
-	rm -r panama5
-	rm -r pidp10-test
-	rm -r scansw10
-	rm -r sty33
+	rm -r /opt/pidp10/src/pidp10/systems
+	rm -r /opt/pidp10/src/pidp10/install
+	rm -r /opt/pidp10/src/pidp10/bin
+	rm -r /opt/pidp10/src/pidp10/src/panama5
+	rm -r /opt/pidp10/src/pidp10/src/pidp10-test
+	rm -r /opt/pidp10/src/pidp10/src/scansw10
+	rm -r /opt/pidp10/src/pidp10/src/sty33
         #git submodule sync
         #git submodule update --init --recursive
         ;;
@@ -334,6 +333,21 @@ case $yn in
 	[Nn]* ) ;;
 	* ) echo "Please answer yes or no.";;
 esac
+
+
+# ---------------------------
+# reduce telnet unblock time
+# ---------------------------
+echo If you are not installing on a Pi, say No:
+read -p "Reduce telnet release time? " yn
+case $yn in
+	[Yy]* ) 
+		sudo sysctl -w net.ipv4.tcp_fin_timeout=1
+		;;
+	[Nn]* ) ;;
+	* ) echo "Please answer yes or no.";;
+esac
+
 
 echo
 echo Done.
