@@ -15,9 +15,9 @@ echo
 ; comment out if you don't want chaosnet started:
 !pgrep cbridge && pkill -2 cbridge && echo stopped old cbridge && sleep 3
 ; bug? seems we must be in cbridge home dir:
-cd /opt/pidp10/bin
-!screen -dmS cbridge /opt/pidp10/bin/cbridge /opt/pidp10/bin/cbridge.conf
-cd /opt/pidp10/systems/its
+;cd /opt/pidp10/bin
+!screen -dmS cbridge /opt/pidp10/bin/cbridge -c /opt/pidp10/bin/cbridge.conf
+;cd /opt/pidp10/systems/its
 
 
 ; comment out if you do not want the Knight TV system started:
