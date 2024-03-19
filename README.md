@@ -77,7 +77,9 @@ More detailed information on two command line scripts:
 `pdp` will get you into the 'screen' session that contains the simh PDP-10 engine. This is seldomly necessary, but it allows you to set the simh settings interactively. You can leave the screen session if you started it from the command line with `Ctrl-A` `d`. 
 <br>Inside simh, you can use CTRL-E to interrupt the simulations, read the simh manuals for what to do, and enter `cont` to resume the simulation.
 
-`pdp -h` will show you how it can start all the various terminals and devices. `pdp con` gets you to the Teletype Model 33 simulator for instance, needed for the ITS boot process. The noisy Teletype simulation of `pdp con` is fun for a while, when you tire of the noise use `pdp telcon` instead. 
+<br>`pdp view` will open a handy all-in one display. 
+
+<br>`pdp -h` will show how to start all the various terminals and devices. `pdp con` gets you to the Teletype Model 33 simulator for instance, needed for the ITS boot process. The noisy Teletype simulation of `pdp con` is fun for a while, when you tire of the noise use `pdp telcon` instead. 
 
 Please note that `pdpcontrol` and `pdp` interact with the PDP-10 engine, but are not part of it. They are just scripts in /opt/pidp10/bin. You can run and close them as you see fit. The PDP-10 just runs.
 
