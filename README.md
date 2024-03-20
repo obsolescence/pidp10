@@ -64,7 +64,7 @@ The project will actually run just fine on a Linux laptop instead of a Pi. There
 Install the project on your X86 Linux machine as per section 3 above. Then, edit the /opt/pip10/bin/pdp.sh script, and where it says 'localhost', change that to raspberrypi.local, or whatever name you gave the Pi. You might want to save the edited script a different name, pdp-remote.sh or somesuch. `./pdp-remote.sh tvcon` will then connect your Knight TV to the PiDP-10.
 
 
-## 3. Command & Control your hardware lab
+## 5. Command & Control your hardware lab
 
 More detailed information on two command line scripts:
 
@@ -84,10 +84,12 @@ More detailed information on two command line scripts:
 Please note that `pdpcontrol` and `pdp` interact with the PDP-10 engine, but are not part of it. They are just scripts in /opt/pidp10/bin. You can run and close them as you see fit. The PDP-10 just runs.
 
 
-## 4. Exploring the AI Labs playground
+## 6. Exploring the AI Labs playground
 
 See the two main project web sites mentioned at the top of the page to explore the system.
-
+<br><br>
+![image](https://pidp.net/images/pidp10/ai-lab-hardware.png)
+<br><br>
 **Source code and hacking about**
 <br>Assuming you let the installer run though all its options, you will find nearly a dozen software projects (the PDP-10, the terminals, the hooked-up other computers from the AI Lab). Edit-compile-run, and install your enhanced binaries in /opt/pidp10 once you are satisfied. Note that almost all these tools are projects stored here as live git submodules.
 <br>`pidp10/src/panama5`: source code for a modified Richard Cornwell's PDP-10 simulator. Use make X86=1 if you do not have a PiDP-10 front panel, it will run fine. 
