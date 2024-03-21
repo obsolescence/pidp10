@@ -1,0 +1,2140 @@
+#!/usr/bin/perl
+
+# Author: Phil Elwell <phil@raspberrypi.com>
+# Copyright (c) 2018-2021, Raspberry Pi (Trading) Ltd.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions, and the following disclaimer,
+#    without modification.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. The names of the above-listed copyright holders may not be used
+#    to endorse or promote products derived from this software without
+#    specific prior written permission.
+#
+# ALTERNATIVELY, this software may be distributed under the terms of the
+# GNU General Public License ("GPL") version 2, as published by the Free
+# Software Foundation.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# To Do:
+# * Combine duplicate labels on the same node
+# * Consider using hashes for properties and node names
+# * &{/path} syntax
+# * 'blame' mode that prepends filename to each line - good for grep.
+
+# Fundamental types
+# ''  - string
+# '#' - 64-bit
+# ':' - 32-bit integer
+# ';' - 16-bit integer
+# '.' - 8-bit integer (byte)
+# '?' - boolean
+# '!' - inverted boolean
+# '[' - byte array     // Byte array syntax accepts but doesn't require colons between bytes
+#   'prop['            // Interpret value as byte array and assign to prop
+#   'prop[=00:01:02'   // property = literal byte array
+#
+# Operations on a fundamental type:
+#                      // N.B. The type must go before the list so we know how to interpret it.
+#
+# 'reg:0'              // set reg and unit address to value
+#   'reg:0=0'          // set reg and unit address to the supplied literal
+#                      // The reg property is only set if it already exists.
+#
+# 'name'               // Assigning to name property automatically sets the node name
+#                      // The name property is only set if it already exists.
+#
+# '=' - literal assignment (if a string, the literal after the =), if an integer,
+#       either the in-band integer or the next cell (useful for phandles).
+#   "prop=foo"         // String literal assignment
+#   "prop=", &spi      // String path literal assignment (the path to the node is substituted, used for aliases)
+#   "prop:0=0"         // Integer literal assignment
+#   "prop:0=", <&spi>; // Integer cell assignment
+#
+# '{...}' - use the value as the key to an element in the set. The usual type indicators apply.
+#   'prop{a='alpha',b='bravo',c='charlie'}";
+#   'prop:0{0=",<&i2c0>,"1=",<&i2c1>,"3=0x2a}";
+
+use strict;
+use integer;
+use warnings;
+
+use POSIX qw(strftime);
+
+my %elem_sizes = (
+ '"' => 0, # string
+ '.' => 1, # byte
+ ';' => 2, # 16-bit int
+ ':' => 4, # 32-bit int
+ '#' => 8, # 64-bit int
+);
+
+my $branch;
+my $comment = 0;
+my $expand = 0;
+my $expand_label = 0;
+my $show_includes = 0;
+my $pi_extras = 0;
+my $redo = 0;
+my $sort = 0;
+my $trace = 0;
+my $warnings = 0;
+my $no_dts = 0;
+my $cur_dt;
+my $retcode = 0;
+my $query = 0;
+my $trace_prop = '';
+my $trace_label = '';
+my $indent_str = "\t";
+
+my @redo_comments;
+my @cmdline;
+
+while ($ARGV[0] =~ /^-/)
+{
+	my $arg = shift @ARGV;
+
+	if ($arg eq '-b')
+	{
+		$branch = shift @ARGV;
+		if (!defined $branch)
+		{
+			print STDERR ("* Branch parameter missing\n");
+			usage();
+		}
+		push @cmdline, $arg, $branch;
+	}
+	elsif ($arg eq '-c')
+	{
+		$comment = 1;
+	}
+	elsif ($arg eq '-e')
+	{
+		$expand = 1;
+	}
+	elsif ($arg eq '-h')
+	{
+		usage();
+	}
+	elsif ($arg eq '-i')
+	{
+		$show_includes = 1;
+	}
+	elsif ($arg eq '-l')
+	{
+		$expand = 1;
+		$expand_label = 1;
+	}
+	elsif ($arg eq '-n')
+	{
+		$no_dts = 1;
+	}
+	elsif ($arg eq '-p')
+	{
+		$pi_extras = 1;
+		push @cmdline, $arg;
+	}
+	elsif ($arg eq '-r')
+	{
+		my $firstline = <>;
+		if ($firstline !~ /^\/\/ redo: ovmerge (.*)/)
+		{
+			print STDERR ("* Redo but input has no 'redo:' comment\n");
+			usage();
+		}
+		my $cmdline = $1;
+		@ARGV = split(/\s/, $cmdline);
+		while (my $line = <>)
+		{
+			chomp($line);
+			last if ($line =~ /^\/dts-v1\//);
+			push @redo_comments, $line;
+		}
+	}
+	elsif ($arg eq '-s')
+	{
+		$sort = 1;
+		push @cmdline, $arg;
+	}
+	elsif ($arg eq '-t')
+	{
+		$trace = 1;
+	}
+	elsif ($arg eq '-w')
+	{
+		$warnings = 1;
+	}
+	elsif ($arg eq '-q')
+	{
+		$query = 1;
+	}
+	elsif ($arg eq '-S')
+	{
+		my $indent_spaces = shift @ARGV;
+		if (!defined $indent_spaces)
+		{
+			print STDERR ("* Spaces count parameter missing\n");
+			usage();
+		}
+		elsif ($indent_spaces !~ /^\d+$/)
+		{
+			print STDERR ("* Invalid spaces count parameter. Expected an integer.\n");
+			usage();
+		}
+		$indent_str = ' ' x $indent_spaces;
+		push @cmdline, $arg, $indent_spaces;
+	}
+	else
+	{
+		print STDERR ("* Unknown option '$arg'\n");
+		usage();
+	}
+}
+
+usage() if (!@ARGV);
+
+push @cmdline, @ARGV;
+
+my @overlays;
+
+foreach my $overlay (@ARGV)
+{
+	$overlay =~ s/^([^,:]+)//;
+	my $ovname = $1;
+	my $dt = dtparse($ovname, $no_dts);
+
+	next if ($show_includes || $expand);
+
+	my $model = get_prop_string($dt->{'root'}, 'model');
+
+	if ($model && $model =~ /^Raspberry Pi/ && $pi_extras)
+	{
+		# Pi firmware adds some labels and aliases that overlays
+		# also require.
+		my $aliases = get_child($dt->{'root'}, 'aliases');
+		my $i2c = get_prop($aliases, 'i2c1')->[1];
+		set_prop($aliases, 'i2c', $i2c);
+		set_prop($aliases, 'i2c_arm', $i2c);
+
+		$i2c = resolve_label($dt, $i2c->[1]);
+		add_label($dt, $i2c, 'i2c_arm');
+
+		$i2c = get_prop($aliases, 'i2c0')->[1];
+		set_prop($aliases, 'i2c_vc', $i2c);
+
+		$i2c = resolve_label($dt, $i2c->[1]);
+		add_label($dt, $i2c, 'i2c_vc');
+
+		my $overrides = get_child($dt->{'root'}, '__overrides__');
+		$i2c = get_prop($overrides, 'i2c1');
+		my @prop = @$i2c[1..$#$i2c];
+		set_prop($overrides, 'i2c', @prop);
+		set_prop($overrides, 'i2c_arm', @prop);
+
+		$i2c = get_prop($overrides, 'i2c0');
+		@prop = @$i2c[1..$#$i2c];
+		set_prop($overrides, 'i2c_vc', @prop);
+	}
+
+	while ($overlay =~ /\G[,:]([^=,]+)(?:=([^,]+))?/g)
+	{
+		dtparam($dt, $1, defined($2) ? $2 : '');
+	}
+
+	my $exports = get_node($dt, '/__exports__');
+	$cur_dt = $dt;
+	if ($exports)
+	{
+		foreach my $symbol (@{$exports->[1]})
+		{
+			# Only the name is required
+			my $expname = $symbol->[0];
+			# Increment the reference count of the named label
+			adj_ref(1, $expname);
+		}
+	}
+	if ($overlay =~ /^,/)
+	{
+		delete_node(get_node($dt, '/__overrides__'));
+		foreach my $fragment (get_fragments($dt))
+		{
+			delete_node($fragment) if (get_child($fragment, '__dormant__'));
+		}
+	}
+	$cur_dt = undef;
+
+	ovstrip($dt) if ($dt->{'plugin'});
+
+	push @overlays, $dt;
+}
+
+exit(0) if (!@overlays);
+
+if ($overlays[0]->{'plugin'})
+{
+	# Count and renumber the fragments in the base
+	renumber_fragments($overlays[0], 0);
+
+	for (my $i = 1; $i < @overlays; $i++)
+	{
+		ovmerge($overlays[0], $overlays[$i]);
+	}
+}
+else
+{
+	my $base = $overlays[0];
+
+	if (@overlays > 1)
+	{
+		# A real Pi base tree will have a __symbols__ node
+		# Some overlays rely on one being present, so ensure one is
+		my $symbols = get_child($base->{'root'}, '__symbols__');
+		$symbols = add_node($base->{'root'}, '__symbols__') if (!$symbols);
+
+		# Count and renumber the fragments in the first overlay
+		renumber_fragments($overlays[1], 0);
+
+		for (my $i = 2; $i < @overlays; $i++)
+		{
+			ovmerge($overlays[1], $overlays[$i]);
+		}
+
+		ovapply($base, $overlays[1]);
+
+		delete_node($symbols) if (is_node_empty($symbols));
+	}
+}
+
+if ($comment)
+{
+	print('// redo: ovmerge -c');
+	foreach my $opt (@cmdline)
+	{
+		if ($opt =~ /\s/)
+		{
+			print(" '$opt'");
+		}
+		else
+		{
+			print(" $opt");
+		}
+	}
+	print("\n");
+	if (@redo_comments)
+	{
+		print(join("\n", @redo_comments));
+	}
+	print("\n");
+}
+
+dtdump($overlays[0]) if (!$query);
+
+exit($retcode);
+
+sub dtparse
+{
+	# DT = hash of:
+	#   'root'   => '/' node
+	#   'plugin' => boolean true if /plugin/ tag is present.
+	#   'labels' => hash of labels used in tree
+	#   'refcount' => hash of reference count of labels in tree (excluding the definition)
+	#   'includes' => array of included headers (array to preserve order)
+	#   'memreserves' => array of memreseve [base,length] pairs
+	#   'defines' => array of memreseve [base,length] pairs
+
+	my ($filename, $got_header) = @_;
+
+	my $defines = {};
+	my $state = [ read_tokens($filename, 0, $defines), 0, undef ];
+	my $labels = {};
+
+	my $dt = { 'labels'=>$labels, 'includes'=>[], 'memreserves'=>[], 'refcount'=>{}, 'defines'=>$defines };
+
+	my $next = get_head($state);
+
+	while ($next =~ /^(\/.+\/|#include)$/)
+	{
+		my $type = $next;
+		$next = match($state, $next);
+		if ($type eq '#include')
+		{
+			set_add($dt->{'includes'}, $next);
+			$next = match($state, $next);
+		}
+		else
+		{
+			if (!$got_header)
+			{
+				die "* File missing /dts-v1/ tag\n" if ($type ne '/dts-v1/');
+				$got_header = 1;
+			}
+			elsif ($type eq '/dts-v1/')
+			{
+				print("* Ignoring duplicate /dts-v1/ tag\n") if ($warnings);
+			}
+			elsif ($type eq '/plugin/')
+			{
+				$dt->{'plugin'} = 1;
+			}
+			elsif ($type eq '/memreserve/')
+			{
+				my $start = get_int($state);
+				my $length = get_int($state);
+				set_add($dt->{'memreserves'}, [ $start, $length ]);
+			}
+			else
+			{
+				die "* Unexpected token '$type'\n";
+			}
+			$next = match($state, ';');
+		}
+	}
+
+	$cur_dt = $dt;
+
+	while (defined $next)
+	{
+		if ($next eq '/')
+		{
+			match($state, '/');
+			$next = parse_node($state, undef, 0, '/');
+		}
+		else
+		{
+			my @newlabels;
+			while ($next =~ /^(\w+):$/)
+			{
+				push @newlabels, $1;
+				print("[Label: $1]\n") if ($trace);
+				$next = match($state, $next);
+			}
+			if ($next =~ /^&(\w+)$/)
+			{
+				my $subnode = $labels->{$1};
+				match($state, $next);
+				if (defined $subnode)
+				{
+					$next = parse_node($state, $subnode->[4], $subnode->[5], $subnode, @newlabels);
+				}
+				else
+				{
+					print STDERR ("* Unknown label '$1'\n");
+					$next = parse_node($state, undef, 0, '/', @newlabels);
+				}
+			}
+			elsif ($next eq '/delete-node/')
+			{
+				$next = match($state, $next);
+				if ($next =~ /^&(\w+)$/)
+				{
+					my $label = $1;
+					my $subnode = $labels->{$label};
+					match($state, $next);
+					if (defined $subnode)
+					{
+						delete_node($subnode);
+					}
+					else
+					{
+						print STDERR ("* Unknown label '$1'\n");
+					}
+					$next = match($state, ';');
+				}
+			}
+			elsif ($next eq '#include')
+			{
+				$next = match($state, $next);
+				set_add($dt->{'includes'}, $next);
+				$next = match($state, $next);
+			}
+			else
+			{
+				die "* Unexpected token '$next'\n";
+			}
+		}
+	}
+
+	$cur_dt = undef;
+
+	if ($state->[1] != @{$state->[0]})
+	{
+		# For now
+		printf("* Junk at the end - %s ...\n", get_head($state));
+	}
+
+	# Check reference counts
+	while (my ($key, $value) = each (%{$dt->{'refcount'}}))
+	{
+		if ($value < 0)
+		{
+			die "* Internal error - negative refcount on '$key'\n";
+		}
+		elsif ($value > 0 && !defined $dt->{'labels'}->{$key} && !$dt->{'plugin'})
+		{
+			print STDERR ("* symbol '$key' is undefined in '$filename'\n");
+			$retcode = 1;
+		}
+	}
+
+	# Check the fragment order
+	ordercheck($dt, {}) if ($dt->{'plugin'});
+
+	# Check the overrides
+	my $overrides = get_node($dt, '/__overrides__');
+	foreach my $param (@{$overrides->[1]})
+	{
+		dtparam($dt, $param->[0], undef);
+	}
+
+	return $dt;
+}
+
+sub dtdump
+{
+	my ($dt) = @_;
+	print("/dts-v1/;\n");
+	print("/plugin/;\n") if ($dt->{'plugin'});
+	print("\n");
+	if (!set_empty($dt->{'includes'}))
+	{
+		foreach my $inc (set_vals($dt->{'includes'}))
+		{
+			print("#include $inc\n");
+		}
+		print("\n");
+	}
+	if (!set_empty($dt->{'memreserves'}))
+	{
+		foreach my $res (set_vals($dt->{'memreserves'}))
+		{
+			print('/memreserve/ ', $res->[0], ' ', $res->[1], ";\n");
+		}
+		print("\n");
+	}
+
+	dump_node($dt->{'root'}, 0);
+}
+
+sub get_vector
+{
+	my ($p, $size, $len) = @_;
+	if (($p->[0] eq '<' || $p->[0] eq '[') && (($p->[1] == $size) || ($p->[1] == 4 && $size == 8)) && (!defined $len || $len == @{$p->[2]}))
+	{
+		return $p->[2];
+	}
+	else
+	{
+		return undef;
+	}
+}
+
+sub get_label_ref
+{
+	my ($p) = @_;
+	my $vector = get_vector($p, 4, 1);
+	if ($vector && ($vector->[0] =~ /^(?:&.*|0)$/))
+	{
+		return $vector->[0];
+	}
+	else
+	{
+		return undef;
+	}
+}
+
+sub parse_lookup_table
+{
+	my ($table, $ovr, $ppos, $value) = @_;
+	my $val;
+
+	#   "prop{a=alpha,b='bravo !',c,=default}"; # Non-match -> 'default'
+	#   "prop:0{0=",<&i2c0>,"1=",<&i2c1>,"3=0x2a,}"; # Non-match copies
+	#   "not:0{0=1,1=0}"; # Non-match -> error
+
+	while ($table =~ /(?:'([^']*)'|([^=,\}]*))(?:=(?:'([^']*)'|([^,\}]*)))?([,\}])?/cg)
+	{
+		my ($key, $sub, $sep) = (defined($1) ? $1 : $2, defined($3) ? $3 : $4, $5);
+		if (!defined $sep)
+		{
+			my $p = $ovr->[$$ppos++];
+			$sub = get_vector($p, 4, 1)->[0];
+			$table = $ovr->[$$ppos++];
+			if (!defined $table)
+			{
+				$sep = '}';
+			}
+			else
+			{
+				die "* Expected string in lookup table\n" if ($table->[0] ne '"');
+				$table = $table->[1];
+				$sep = $1 if ($table =~ /^(\})/);
+			}
+		}
+		if (defined $value)
+		{
+			if ($key eq '')
+			{
+				if (!defined $val)
+				{
+					$val = (defined $sub) ? $sub : $value;
+				}
+			}
+			elsif ($key eq $value)
+			{
+				$val = (defined $sub) ? $sub : $key;
+			}
+		}
+		last if (($sep || '') eq '}');
+	}
+
+	die "* No match for '$value'\n" if (defined $value && !defined $val);
+
+	return $val;
+}
+
+sub dtparam
+{
+	my ($dt, $param, $value) = @_;
+
+	my $overrides = get_node($dt, '/__overrides__');
+	die "* No overrides found\n" if (!$overrides);
+	my $ovr = get_prop($overrides, $param);
+	die "* dtparam '$param' not found\n" if (!$ovr);
+
+	for (my $pos = 1; $pos < @$ovr;)
+	{
+		my $p = $ovr->[$pos++];
+		my $label = get_label_ref($p);
+		die "* Invalid override 1: $param\n" if (!defined $label);
+		$p = $ovr->[$pos++];
+		die "* Invalid override 2: $param\n" if ($p->[0] ne '"');
+		my $decl = $p->[1];
+		if ($label =~ /^&(.*)/)
+		{
+			my $node = resolve_label($dt, $1);
+			die "* Override '$param' targets unknown label '$1'\n" if (!$node);
+			if ($decl =~ /^([-a-zA-Z0-9_,]+)([.;:#])(\d+)(?:(=|\{)(.*))?$/)
+			{
+				# Integer parameter
+				my ($prop, $type, $offset, $op, $opdata) = ($1, $2, $3, $4 || '', $5);
+				my $size = $elem_sizes{$type};
+				my $val = $value;
+				if ($op eq '=')
+				{
+					if ($opdata ne '')
+					{
+						$val = $opdata;
+					}
+					else
+					{
+						my $vector = get_vector($ovr->[$pos++], 4, 1);
+						die "* Expected cell value in parameter '$param'\n" if (!defined $vector);
+						$val = $vector->[0];
+					}
+				}
+				elsif ($op eq '{')
+				{
+					$val = parse_lookup_table($opdata, $ovr, \$pos, $value);
+				}
+
+				my $intval = integer_value($val, $size);
+				if (defined $value && $prop eq 'reg')
+				{
+					my $regval = sprintf("%x", $intval);
+					$node->[0] =~ s/@[0-9a-fA-F]*$/\@$regval/;
+				}
+
+				# Locate the offset within the property
+				my ($chunk, $chunk_idx) =
+					find_prop_chunk($node, $prop, $offset, $size, $param, defined($value) && $prop ne 'reg');
+
+				if ($chunk)
+				{
+					# Check the override type matches the property type
+					my $vector = get_vector($chunk, $size);
+					die "* Probably incorrect override property type for '$prop'\n" if (!$vector);
+
+					if (defined $value)
+					{
+						# Apply the override
+						for (my $i = @$vector; $i < $chunk_idx; $i++)
+						{
+							$vector->[$i] = 0;
+						}
+						$vector->[$chunk_idx] = $intval;
+					}
+				}
+			}
+			elsif ($decl =~ /^([-a-zA-Z0-9_,]+)([\?\!])(?:(=|\{)(.*))?$/)
+			{
+				# boolean
+				my ($prop, $sense, $op, $opdata) = ($1, $2, $3 || '', $4);
+				my $val = $value;
+				if ($op eq '=')
+				{
+					if ($opdata ne '')
+					{
+						$val = $opdata;
+					}
+					else
+					{
+						my $vector = get_vector($ovr->[$pos++], 4, 1);
+						die "* Expected cell value in parameter '$param'\n" if (!defined $vector);
+						$val = $vector->[0];
+					}
+				}
+				elsif ($op eq '{')
+				{
+					$val = parse_lookup_table($opdata, $ovr, \$pos, $value);
+				}
+
+				if (defined $value)
+				{
+					my $bool = boolean_value($val);
+					$bool = !$bool if ($sense eq '!');
+					if ($bool)
+					{
+						set_prop($node, $prop);
+					}
+					else
+					{
+						delete_prop($node, $prop);
+					}
+				}
+			}
+			elsif ($decl =~ /^([-a-zA-Z0-9_,]+)\[(?:(=|\{)(.*))?$/)
+			{
+				# byte array
+				my ($prop, $op, $opdata) = ($1, $2 || '', $3);
+				my $val = $value;
+				if ($op eq '=')
+				{
+					$val = $opdata;
+				}
+				elsif ($op eq '{')
+				{
+					$val = parse_lookup_table($opdata, $ovr, \$pos, $value);
+				}
+				if (defined $value)
+				{
+					apply_prop($node, $prop, ['[', 1, byte_array_value($val)]);
+				}
+			}
+			elsif ($decl =~ /^([-a-zA-Z0-9_,]+)(?:(=|\{)(.*))?$/)
+			{
+				# string
+				my ($prop, $op, $opdata) = ($1, $2 || '', $3);
+				my $val = $value;
+				if ($op eq '=')
+				{
+					if ($opdata ne '')
+					{
+						$val = $opdata;
+					}
+					elsif ($pos == @$ovr)
+					{
+						$val = '';
+					}
+					else
+					{
+						$val = $ovr->[$pos++];
+						die "* Expected a string or label reference in parameter '$param'\n" if (($val->[0] ne '"') && ($val->[0] ne '&'));
+					}
+				}
+				elsif ($op eq '{')
+				{
+					$val = parse_lookup_table($opdata, $ovr, \$pos, $value);
+				}
+				if (defined $value)
+				{
+					if ($prop eq 'name')
+					{
+						$node->[0] = $val;
+					}
+					else
+					{
+						apply_prop($node, $prop, ref($val) ? $val : [ '"', $val ]);
+					}
+				}
+			}
+			else
+			{
+				die "* Invalid parameter declaration '$decl'\n";
+			}
+		}
+		else
+		{
+			while ($decl =~ /\G([=!+-])(\d+)/g)
+			{
+				my ($op, $num) = ($1, $2);
+				my $frag = get_node($dt, '/fragment-'.$num) || get_node($dt, '/fragment@'.$num);
+				die "* Param $param: no fragment $num\n" if (!$frag);
+				if (defined $value)
+				{
+					# Enable or disable the fragment as needed
+					my $bool = boolean_value($value);
+					if ($op eq '!')
+					{
+						$bool = !$bool;
+					}
+					elsif ($op eq '+')
+					{
+						$bool = 1;
+					}
+					elsif ($op eq '-')
+					{
+						$bool = 0;
+					}
+					$frag->[2]->[0]->[0] = ($bool ? '__overlay__' : '__dormant__');
+				}
+			}
+			die "* Invalid override 3:$param\n" if (defined(pos($decl)));
+		}
+	}
+}
+
+# Combine two (possibly partially overridden) overlays
+sub ovmerge
+{
+	my ($base, $ov) = @_;
+
+	die "* Cannot merge a non-overlay\n" if (!$base->{'plugin'} || !$ov->{'plugin'});
+
+	# Combine the list of includes, removing any duplicates
+	foreach my $inc (set_vals($ov->{'includes'}))
+	{
+		set_add($base->{'includes'}, $inc);
+	}
+
+	# Count and renumber the fragments in the overlay
+	renumber_fragments($ov, $base->{'frag_count'});
+
+	# Uniquify and merge the overlay labels
+	my %transform;
+	my $base_labels = $base->{'labels'};
+	my $ov_labels = $ov->{'labels'};
+
+	foreach my $l (keys(%$ov_labels))
+	{
+		my $nl = $l;
+		my $n = $ov_labels->{$l};
+		if ($base_labels->{$l})
+		{
+			my $i;
+			for ($i = 1; ; $i++)
+			{
+				$nl = "${l}_$i";
+				last if (!$base_labels->{$nl});
+			}
+			$transform{$l} = $nl;
+
+			# Don't use get_labels here because it returns a copy
+			# and we need to modify the original
+			foreach my $ol (@{$n->[3]})
+			{
+				$ol = $nl if ($ol eq $l);
+			}
+		}
+		$base_labels->{$nl} = $n;
+	}
+
+	relabel_node($ov->{'root'}, \%transform, 0);
+
+	my $base_overrides = get_node($base, '/__overrides__');
+	my $ov_overrides = get_node($ov, '/__overrides__');
+
+	remove_node($base_overrides) if ($base_overrides);
+
+	# Merge the fragments
+	foreach my $child (get_fragments($ov))
+	{
+		add_node($base->{'root'}, $child);
+
+		$base->{'frag_count'}++;
+	}
+
+	# Merge the overrides
+
+	if ($ov_overrides)
+	{
+		$base_overrides ||= new_node('__overrides__');
+		foreach my $ovr (@{$ov_overrides->[1]})
+		{
+			die "* Duplicate parameter '$ovr->[0]'\n" if (get_prop($base_overrides, $ovr->[0]));
+
+			set_prop($base_overrides, @$ovr);
+		}
+	}
+
+	add_node($base->{'root'}, $base_overrides) if ($base_overrides);
+}
+
+# Remove the dormant fragments and unused labels from an overlay
+sub ovstrip
+{
+	my ($dt) = @_;
+	my @unused;
+
+	$cur_dt = $dt;
+	while (my ($key, $value) = each (%{$dt->{'labels'}}))
+	{
+		push @unused, $key if (!$dt->{'refcount'}->{$key});
+	}
+
+	foreach my $label (@unused)
+	{
+		my $node = $dt->{'labels'}->{$label};
+		map_del($dt->{'labels'}, $label);
+		my $node_labels = $node->[3];
+		for (my $i = 0; $i < @$node_labels; $i++)
+		{
+			if ($node_labels->[$i] eq $label)
+			{
+				splice(@$node_labels, $i, 1);
+				last;
+			}
+		}
+	}
+	$cur_dt = undef;
+}
+
+# Apply an overlay to a base tree
+sub ovapply
+{
+	my ($base, $ov) = @_;
+
+	die "* Cannot apply a non-overlay\n" if (!$ov->{'plugin'});
+	die "* Cannot apply an overlay to an overlay\n" if ($base->{'plugin'});
+
+	# Combine the list of includes, removing any duplicates
+	foreach my $inc (set_vals($ov->{'includes'}))
+	{
+		set_add($base->{'includes'}, $inc);
+	}
+
+	my $base_overrides = get_node($base, '/__overrides__');
+
+	# Apply fragments in two passes
+
+	# Pass 1: Apply fragments that target other fragments within the overlay
+	foreach my $fragment (get_fragments($ov))
+	{
+		my $overlay = get_child($fragment, '__overlay__');
+		next if (!$overlay);
+		my $target_node;
+		my $target = get_prop($fragment, 'target');
+		if ($target)
+		{
+			my $label = get_label_ref($target->[1]);
+			die "* Invalid target reference\n" if ($label !~ /^&(.*)/);
+			$target_node = $ov->{'labels'}->{$1};
+			if ($target_node)
+			{
+			    # Merge properties and subnodes
+			    apply_node($ov, $target_node, $overlay);
+			    $overlay->[0] = '__dormant__';
+			}
+		}
+	}
+
+	# Pass 2: Apply fragments that target the base dtb
+	foreach my $fragment (get_fragments($ov))
+	{
+		my $overlay = get_child($fragment, '__overlay__');
+		next if (!$overlay);
+		my $target_node;
+		my $target = get_prop($fragment, 'target');
+		if ($target)
+		{
+			my $label = get_label_ref($target->[1]);
+			die "* Invalid target reference\n" if ($label !~ /^&(.*)/);
+			$target_node = $base->{'labels'}->{$1};
+			die "* Label '$1' not found in base\n" if (!$target_node);
+		}
+		else
+		{
+			$target = get_prop($fragment, 'target-path');
+			die "* Invalid target-path\n" if ($target->[1]->[0] ne '"');
+			$target_node = get_node($base, $target->[1]->[1]);
+			die "* Path '$target->[1]->[1]' not found in base\n" if (!$target_node);
+		}
+
+		# Merge properties and subnodes
+		apply_node($base, $target_node, $overlay);
+	}
+}
+
+sub ordercheck
+{
+	my ($ov, $applied) = @_;
+
+	# Try to apply fragments that target other fragments within the overlay
+	foreach my $fragment (get_fragments($ov))
+	{
+		my $overlay = get_child($fragment, '__overlay__') ||
+		    get_child($fragment, '__dormant__');
+		next if (!$overlay);
+		my $target_node;
+		my $target = get_prop($fragment, 'target');
+		if ($target)
+		{
+			my $label = get_label_ref($target->[1]);
+			die "* Invalid target reference\n" if ($label !~ /^&(.*)/);
+			$target_node = $ov->{'labels'}->{$1};
+			if ($target_node)
+			{
+				my $target_fragment = fragment_of($target_node);
+				die "* $fragment->[0] should precede " . ($target_fragment ? $target_fragment->[0] : "fragment@?") . "\n"
+				    if ($applied->{$target_node});
+				set_applied($overlay, $applied);
+			}
+		}
+	}
+}
+
+sub set_applied
+{
+	my ($node, $applied) = @_;
+	$applied->{$node} = 1;
+	foreach my $subnode (get_children($node))
+	{
+		set_applied($subnode, $applied);
+	}
+}
+
+sub parse_node
+{
+	my ($state, $parent, $depth, $node, @newlabels) = @_;
+	# scalar name
+	# array properties
+	# array children
+	# array labels
+	# ref parent
+	# scalar depth
+
+	my $next = match($state, '{');
+
+	$node = (get_child($parent, $node) || add_node($parent, $node)) if (!ref $node);
+
+	printf("parse_node(%s, %d ...) - %s\n", $node->[0], $depth) if ($trace);
+
+	# Parse the properties first
+
+	# Properties are "name=value;"
+	while ($next ne '}')
+	{
+		my @childlabels;
+		if ($next eq '/delete-node/')
+		{
+			$next = match($state, $next);
+			if ($next =~ /^[-a-zA-Z0-9,._+#@]+$/)
+			{
+				delete_node(get_child($node, $next));
+				match($state, $next);
+				$next = match($state, ';');
+			}
+			next;
+		}
+		elsif ($next eq '/delete-property/')
+		{
+			$next = match($state, $next);
+			if ($next =~ /^[-a-zA-Z0-9,._+#@]+$/)
+			{
+				delete_prop($node, $next);
+				match($state, $next);
+				$next = match($state, ';');
+			}
+			next;
+		}
+
+		while ($next =~ /^(\w+):$/)
+		{
+			push @childlabels, $1;
+			print("[Label: $1]\n") if ($trace);
+			$next = match($state, $next);
+		}
+
+		if ($next =~ /^[-a-zA-Z0-9,._+#@]+$/)
+		{
+			my $name = $next;
+			print("* Leading zero in node name '$name'\n") if ($name =~ /\@0[0-9a-fA-F]/);
+			$next = match($state, $next);
+			if ($next eq '{')
+			{
+				$next = parse_node($state, $node, $depth + 1, $name, @childlabels);
+			}
+			elsif ($next eq '=')
+			{
+				my @prop;
+
+				print("* Ignoring label on property '$name'\n") if (@childlabels && $warnings);
+				do
+				{
+					$next = match($state, $next);
+					if ($next =~ /^"(.*)"$/)
+					{
+						# string
+						push @prop, [ '"', $1 ];
+						$next = match($state, $next);
+					}
+					elsif ($next =~ /^&(.*)/)
+					{
+						# noderef string
+						push @prop, [ '&', $1 ];
+						$next = match($state, $next);
+					}
+					elsif (($next eq '<') || ($next eq '/bits/'))
+					{
+						my $elemsize = 4;
+						if ($next eq '/bits/')
+						{
+							$next = match($state, $next);
+
+							if (($next != 8) && ($next != 16) &&
+							    ($next != 32) && ($next != 64))
+							{
+								die "* Invalid /bits/ value '$next'.\n";
+							}
+							$elemsize = $next/8;
+							match($state, $next);
+						}
+						$next = match($state, '<');
+
+						# vector
+						my $vals = [];
+						while ($next ne '>')
+						{
+							push @$vals, $next;
+							$next = match($state, $next);
+						}
+						push @prop, [ '<', $elemsize, $vals ];
+						$next = match($state, '>');
+					}
+					else
+					{
+						# bytestring
+						my $vals = [];
+						$next = match($state, '[');
+						while ($next ne ']')
+						{
+							push @$vals, $next;
+							$next = match($state, $next);
+						}
+						$next = match($state, ']');
+						push @prop, [ '[', 1, $vals ];
+					}
+				} while ($next eq ',');
+				$next = match($state, ';');
+				set_prop($node, $name, @prop);
+			}
+			else
+			{
+				print("* Ignoring label on property '$name'\n") if (@childlabels && $warnings);
+				$next = match($state, ';');
+				set_prop($node, $name);
+			}
+		}
+		else
+		{
+			die "* Unexpected token '$next'\n";
+		}
+	}
+
+	my $labels = $cur_dt->{'labels'};
+
+	foreach my $newlabel (@newlabels)
+	{
+		my $labelled_node = map_find($labels, $newlabel);
+		if ($labelled_node)
+		{
+			if ($labelled_node != $node)
+			{
+				print STDERR ("* Duplicated label '$newlabel' - '", $labelled_node->[0], "' and '", $node->[0], "'\n");
+			}
+			else
+			{
+				print("* Replicated label '$newlabel' (on the same node)\n") if ($warnings);
+			}
+		}
+		add_label($cur_dt, $node, $newlabel);
+	}
+
+	match($state, '}');
+
+	return match($state, ';');
+}
+
+sub add_label
+{
+	my ($dt, $node, $label) = @_;
+
+	my $old_value = map_find($dt->{'labels'}, $label);
+	if (defined $old_value)
+	{
+	    return if ($old_value == $node);
+	    die "* Label '$label' redefined\n";
+	}
+	map_add($dt->{'labels'}, $label, $node);
+	push @{$node->[3]}, $label;
+	print("* Multiple labels on '" . node_path($node) . "'\n") if ($warnings && @{$node->[3]} > 1);
+}
+
+sub resolve_label
+{
+	my ($dt, $label) = @_;
+
+	return $dt->{'labels'}->{$label};
+}
+
+sub resolve_alias
+{
+	my ($dt, $alias) = @_;
+	my $aliases = get_node($dt, '/aliases');
+	$alias = get_prop($aliases, $alias);
+	return undef if (!$alias);
+	if ($alias->[1][0] eq '&')
+	{
+		return resolve_label($dt, $alias->[1][1]);
+	}
+	else
+	{
+		return get_node($dt, $alias->[1][1]);
+	}
+}
+
+sub fragment_of
+{
+	my ($node) = @_;
+	return undef if (!$node);
+	return $node if ($node->[0] =~ /^fragment@/);
+	return fragment_of($node->[4]);
+}
+
+sub dump_node
+{
+	my ($node, $depth) = @_;
+	my $indent = $indent_str x $depth;
+
+	print($indent, join(': ', get_labels($node), $node->[0]), " {\n");
+
+	# Properties
+	foreach my $prop (get_props($node))
+	{
+		my @terms;
+		print($indent, $indent_str, $prop->[0]);
+		for (my $i = 1; $i < @$prop; $i++)
+		{
+			my $chunk = $prop->[$i];
+
+			if ($chunk->[0] eq '"')
+			{
+				push @terms, '"'.$chunk->[1].'"';
+			}
+			elsif ($chunk->[0] eq '&')
+			{
+				push @terms, '&'.$chunk->[1];
+			}
+			elsif ($chunk->[0] =~ '<')
+			{
+				push @terms, '<'.join(' ', @{$chunk->[2]}).'>';
+			}
+			elsif ($chunk->[0] eq '[')
+			{
+				push @terms, '['.join(' ', @{$chunk->[2]}).']';
+			}
+			else
+			{
+				push @terms, '?';
+			}
+		}
+		print(' = ', join(', ', @terms)) if (@terms);
+		print(";\n");
+	}
+
+	# Sub-nodes
+	foreach my $subnode (get_children($node))
+	{
+		dump_node($subnode, $depth + 1);
+	}
+
+	print($indent, "};\n");
+}
+
+sub read_tokens
+{
+	my ($filename, $depth, $defines) = @_;
+	my $linenum = 0;
+	my $fh;
+	my $tokens = [ ['/file/', $filename] ];
+	my $in_comment = 0;
+	my $if_count = 0;
+	my $hidden_count = 0;
+	my $expr;
+	my $expr_level = 0;
+	my $filepath = $filename;
+	$filepath =~ s/\/?[^\/]*$//;
+	$filepath .= '/' if ($filepath);
+
+	print("    " x $depth, $filename, "\n") if ($show_includes);
+	print("[read_tokens '$filename']\n") if ($trace);
+	print("#### Start of '$filename'\n") if ($expand && !$expand_label);
+	die "* Failed to open '$filename'\n" if ($branch
+		? !open($fh, '-|', "git show $branch:./$filename")
+		: !open($fh, '<', $filename));
+
+	while (my $line = <$fh>)
+	{
+		$linenum++;
+
+		if ($in_comment)
+		{
+			next if ($line !~ s/^.*?\*\///);
+			$in_comment = 0;
+		}
+
+		if ($line =~ /^\s*#if(def|ndef)?\s+(\w+)/)
+		{
+			my $mode = $1;
+			my $defined = defined($defines->{$2});
+			$if_count++;
+			$hidden_count++ if ($hidden_count || !$mode ||
+					($mode eq 'def' && !$defined) ||
+					($mode eq 'ndef' && $defined));
+			next;
+		}
+		elsif ($line =~ /^\s*#else/)
+		{
+			if ($hidden_count == 0)
+			{
+				$hidden_count = 1;
+			}
+			elsif ($hidden_count == 1)
+			{
+				$hidden_count = 0;
+			}
+			next;
+		}
+		elsif ($line =~ /^\s*#endif/)
+		{
+			die "* Unmatched #endif ($filename:$linenum)\n" if (!$if_count);
+			$if_count--;
+			$hidden_count-- if ($hidden_count);
+			next;
+		}
+
+		next if ($hidden_count);
+		if ($line =~ /^\s*(?:#include|\/include\/)\s+(["<][^">]+[">])\s*$/)
+		{
+			my $incfile = $1;
+			if ($incfile =~ /\.h.$/)
+			{
+				push @$tokens, '#include', $incfile;
+			}
+			elsif ($incfile =~ /\.dtsi?.$/)
+			{
+				my $dtsfile = search_path($filepath.substr($incfile, 1, -1));
+				die "* Failed to find include file '$incfile'" if (!$dtsfile);
+				my $inc_tokens = read_tokens($dtsfile, $depth + 1, $defines);
+				push @$tokens, @$inc_tokens;
+				push @$tokens, ['/file/', $filename];
+				print("#### Continue '$filename'\n") if ($expand && !$expand_label);
+			}
+			else
+			{
+				die "* Invalid include file '$incfile'\n";
+			}
+			next;
+		}
+		elsif ($line =~ /^\s*#define\s+(\w+)(?:\s+([^\r\n]+))?/)
+		{
+			my $symbol = $1;
+			my $val = $2 || '';
+
+			$val =~ s/\/\/.*//;
+			$val =~ s/\s+$//;
+			$defines->{$symbol} = $val;
+			next;
+		}
+		elsif ($line =~ /^\s*#undef\s+(\w+)/)
+		{
+			delete $defines->{$1};
+			next;
+		}
+		elsif ($line =~ /^\s*#bkpt/)
+		{
+			$DB::single = 1;
+			next;
+		}
+
+		print("$filename:$linenum: ") if ($expand_label);
+		print($line) if ($expand);
+
+		# Split the line into tokens
+		$line =~ /^\s*/g;
+
+		if ($expr_level)
+		{
+			while ($expr_level && $line =~ /\G(.*?)([\(\)])(\s*)/cg)
+			{
+				$expr_level += ($2 eq '(') ? 1 : -1;
+				$expr .= $1 . $2;
+				$expr .= $3 if ($expr_level);
+			}
+			if ($expr_level)
+			{
+				$expr .= $1 if ($line =~ /\G(.*?)\s*$/cg);
+				next;
+			}
+			push @$tokens, $expr;
+		}
+
+		while ($line =~ /\G((?:\/(?:dts-v1|plugin|memreserve|bits|delete-node|delete-property)\/)|&[a-zA-Z_][a-zA-Z0-9_]*|[a-zA-Z_][a-zA-Z0-9_]*:|[-a-zA-Z0-9,._+#@]+|\(|"(?:[^\\"]|\\.)*"|'(?:[^']|\\.)*'|\/\/|\/\*|[\/{};=<>,\[\]])\s*/cg)
+		{
+			my $tok = $1;
+			if ($tok eq '//')
+			{
+				$line = '';
+				last;
+			}
+			elsif ($tok eq '/*')
+			{
+				if ($line !~ /\G.*?\*\/\s*/cg)
+				{
+					$in_comment = 1;
+					$line = '';
+					last;
+				}
+				next;
+			}
+			elsif ($tok eq '(')
+			{
+				$expr_level = 1;
+				$expr = '(';
+				while ($expr_level && $line =~ /\G(.*?)([\(\)])(\s*)/cg)
+				{
+					$expr_level += ($2 eq '(') ? 1 : -1;
+					$expr .= $1 . $2;
+					$expr .= $3 if ($expr_level);
+				}
+				if ($expr_level)
+				{
+					$expr .= $1 if ($line =~ /\G(.*?)\s*$/cg);
+					last;
+				}
+				$tok = $expr;
+			}
+			if ($tok =~ /\b(\w+)\b/)
+			{
+				my $sym = $1;
+				my $newsym = $defines->{$sym};
+				if (defined($newsym))
+				{
+					printf("['%s' -> '%s']\n", $sym, $newsym) if ($trace);
+					$tok =~ s/\b$sym\b/$newsym/;
+				}
+			}
+			push @$tokens, $tok;
+		}
+		if ($line !~ /\G[\r\n]*$/cg)
+		{
+			$line = substr($line, pos($line));
+			die "* Bad token at '$line'\n";
+		}
+	}
+
+	close($fh);
+
+	print("#### End of '$filename'\n") if ($expand && !$expand_label);
+
+	return $tokens;
+}
+
+sub match
+{
+	my ($state, $match) = @_;
+	my $next = get_head($state);
+	print("[match '$match' @ $state->[1]]\n") if ($trace);
+	die "* Unexpected token '$next' - expected '$match'\n" if ($next ne $match);
+	return get_next($state);
+}
+
+sub get_next
+{
+	my ($state) = @_;
+	$state->[1]++;
+	return get_head($state);
+}
+
+sub get_head
+{
+	my ($state) = @_;
+	my $head = ${$state->[0]}[$state->[1]];
+	while (ref $head)
+	{
+		if ($head->[0] eq '/file/')
+		{
+			my $file = $head->[1];
+			$state->[2] = $file;
+			print("[file $file]\n") if ($trace);
+		}
+		else
+		{
+			die "* Unknown metadata '$head->[0]'\n";
+		}
+		$head = get_next($state);
+	}
+	return $head;
+}
+
+sub remove_node
+{
+	my ($node) = @_;
+	my $parent = $node->[4];
+
+	print("[remove_node($node->[0]\n") if ($trace);
+
+	return if (!$parent);
+	$node->[4] = undef;
+
+	# Find the node in the parent
+	my $found;
+
+	for (my $i = 0; $i < @{$parent->[2]}; $i++)
+	{
+		if ($parent->[2]->[$i] == $node)
+		{
+			$found = $i;
+			last;
+		}
+	}
+
+	die "* Internal error - wrong parent/missing child\n" if (!defined $found);
+
+	# Remove from the parent
+	splice(@{$parent->[2]}, $found, 1);
+}
+
+sub delete_node
+{
+	my ($node) = @_;
+	my $found;
+
+	return if (!$node);
+
+	remove_node($node);
+
+	# Delete all labels attached to the node
+	foreach my $label (get_labels($node))
+	{
+		map_del($cur_dt->{'labels'}, $label);
+	}
+
+	print("  [Deleted labels]\n") if ($trace);
+
+	# Delete all label references from the properties
+	foreach my $prop (get_props($node))
+	{
+		adj_val_refs(-1, @$prop[1..$#$prop]);
+	}
+
+	# Delete all subnodes
+	while (@{$node->[2]})
+	{
+		delete_node($node->[2]->[0]);
+	}
+
+	print("  [Deleted subnodes]\n") if ($trace);
+	return 1;
+}
+
+sub relabel_node
+{
+	my ($node, $transform, $depth) = @_;
+
+	# Properties
+	foreach my $prop (get_props($node))
+	{
+		if ($depth > 0)
+		{
+			for (my $i = 1; $i < @$prop; $i++)
+			{
+				my $chunk = $prop->[$i];
+				if ($chunk->[0] eq '<')
+				{
+					foreach my $term (@{$chunk->[2]})
+					{
+						if ($term =~ /^&(.*)/)
+						{
+							my $newlabel = $transform->{$1};
+							if ($newlabel)
+							{
+								adj_ref(-1, $1);
+								adj_ref(1, $newlabel);
+								$term = '&'.$newlabel;
+							}
+						}
+					}
+				}
+				elsif ($chunk->[0] eq '&')
+				{
+					my $newlabel = $transform->{$chunk->[1]};
+					if ($newlabel)
+					{
+						adj_ref(-1, $1);
+						adj_ref(1, $newlabel);
+						$chunk->[1] = $newlabel;
+					}
+				}
+			}
+		}
+	}
+
+	# Sub-nodes
+	foreach my $subnode (get_children($node))
+	{
+		relabel_node($subnode, $transform, $depth + 1);
+	}
+}
+
+sub apply_node
+{
+	my ($base, $dst, $src) = @_;
+
+	# Properties
+	foreach my $prop (get_props($src))
+	{
+		apply_prop($dst, @$prop);
+	}
+
+	# Labels
+	foreach my $label (get_labels($src))
+	{
+		add_label($base, $dst, $label);
+	}
+
+	# Sub-nodes
+	foreach my $subsrc (get_children($src))
+	{
+		my $subdst = get_child($dst, $subsrc->[0]);
+		if ($subdst)
+		{
+			die "* Subnode $subsrc->[0] already exists\n";
+		}
+		else
+		{
+			$subdst = add_node($dst, $subsrc->[0]);
+		}
+		apply_node($base, $subdst, $subsrc);
+	}
+}
+
+sub search_path
+{
+	my ($fname) = @_;
+	return $fname if ($branch && system("git cat-file -e $branch:./$fname") == 0);
+	return $fname if (-r $fname);
+	return undef;
+}
+
+sub new_node
+{
+	my ($name) = @_;
+	return [ $name, [], [], [] ];
+}
+
+sub add_node
+{
+	my ($parent, $name) = @_;
+	my $node = (ref $name) ? $name : new_node($name);
+	$node->[4] = $parent;
+	if ($parent)
+	{
+		$node->[5] = $parent->[5] + 1;
+		push @{$parent->[2]}, $node;
+	}
+	else
+	{
+		die "* Invalid root node '$name'\n" if ($name ne '/');
+		$node->[5] = 0;
+		$cur_dt->{'root'} = $node;
+	}
+	return $node;
+}
+
+sub get_node
+{
+	my ($dt, $path) = @_;
+
+	my $node = $dt->{'root'};
+	if ($path =~ s/^([^\/]+)(\/|$)/\//)
+	{
+		$node = resolve_alias($dt, $1);
+	}
+	return $node if ($path eq '/');
+	while ($node && $path =~ /\G\/([-a-zA-Z0-9,._+#@]+)/g)
+	{
+		my $name = $1;
+		$node = get_child($node, $name);
+	}
+
+	return $node;
+}
+
+sub is_node_empty
+{
+	my ($node) = @_;
+	return !get_children($node) && !get_props($node);
+}
+
+sub get_child
+{
+	my ($node, $name) = @_;
+
+	if ($node)
+	{
+		foreach my $child (@{$node->[2]})
+		{
+			return $child if (($child->[0] eq $name) ||
+					  ($name !~ /@/ && $child->[0] =~ /^$name@/));
+		}
+	}
+	else
+	{
+		return $cur_dt->{'root'} if ($name eq '/');
+	}
+	return undef;
+}
+
+sub by_addr
+{
+	my $a_addr = ($a->[0] =~ /@(.*)$/) ? hex($1) : undef;
+	my $b_addr = ($b->[0] =~ /@(.*)$/) ? hex($1) : undef;
+	return $a_addr <=> $b_addr if (defined $a_addr && defined $b_addr);
+	return -1 if (defined $a_addr);
+	return 1 if (defined $b_addr);
+	return $a->[0] cmp $b->[0];
+}
+
+sub get_children
+{
+	my ($node) = @_;
+
+	return sort by_addr (@{$node->[2]}) if ($sort);
+	return (@{$node->[2]});
+}
+
+sub get_fragments
+{
+	my ($ov) = @_;
+
+	my @fragments;
+
+	foreach my $child (get_children($ov->{'root'}))
+	{
+		push @fragments, $child if ($child->[0] =~ /^fragment[@-](\d+)$/);
+	}
+
+	return @fragments;
+}
+
+sub renumber_fragments
+{
+	my ($ov, $offset) = @_;
+
+	my @fragments;
+	my @remap;
+	my $count = 0;
+	my $overrides;
+
+	foreach my $child (get_children($ov->{'root'}))
+	{
+		if ($child->[0] =~ /^fragment([@-])(\d+)$/)
+		{
+			my ($sep,$num) = ($1,$2);
+			$remap[$num] = $count + $offset;
+			$child->[0] = sprintf('fragment%s%d', $sep, $count + $offset);
+			push @fragments, $child;
+			$count++;
+		}
+		elsif ($child->[0] eq '__overrides__')
+		{
+			$overrides = $child;
+		}
+	}
+
+	$ov->{'frag_count'} = $count;
+
+	return if (!$overrides);
+
+	foreach my $ovr (@{$overrides->[1]})
+	{
+		for (my $pos = 1; $pos < @$ovr; $pos++)
+		{
+			if ((get_label_ref($ovr->[$pos]) || '') eq '0')
+			{
+				$pos++;
+				while ($ovr->[$pos]->[1] =~ /\G[=!+-](\d+)/g)
+				{
+					die ("* override '$ovr->[0]}' references missing fragment $1\n") if (!defined $remap[$1]);
+				}
+				$ovr->[$pos]->[1] =~ s/\G([=!+-])(\d+)/$1.$remap[$2]/eg;
+			}
+		}
+	}
+}
+
+sub node_path
+{
+	my ($node) = @_;
+	return '/' if ($node->[0] eq '/');
+	my $parent_path = node_path($node->[4]);
+	$parent_path = '' if ($parent_path eq "/");
+	return $parent_path.'/'.$node->[0];
+}
+
+sub get_prop_string
+{
+	my ($node, $name) = @_;
+
+	my $prop = get_prop($node, $name);
+	return undef if (!$prop);
+	return undef if (@$prop != 2);
+	return undef if ($prop->[1]->[0] ne '"');
+	return $prop->[1]->[1];
+}
+
+sub get_prop
+{
+	my ($node, $name) = @_;
+
+	foreach my $prop (@{$node->[1]})
+	{
+		return $prop if ($prop->[0] eq $name);
+	}
+
+	return undef;
+}
+
+sub get_props
+{
+	my ($node) = @_;
+
+	return sort { $a->[0] cmp $b->[0] } (@{$node->[1]}) if ($sort);
+	return (@{$node->[1]});
+}
+
+sub add_prop
+{
+	my ($node, $name, @vals) = @_;
+	my $new = [ $name, @vals ];
+	push @{$node->[1]}, $new;
+	return $new;
+}
+
+sub set_prop
+{
+	my ($node, $name, @vals) = @_;
+
+	$DB::single = 1 if ($name eq $trace_prop);
+
+	adj_val_refs(1, @vals);
+
+	foreach my $prop (@{$node->[1]})
+	{
+		if ($prop->[0] eq $name)
+		{
+			adj_val_refs(-1, @$prop[1..$#$prop]);
+			splice(@$prop, 1, @$prop - 1, @vals);
+			return $prop;
+		}
+	}
+
+	return add_prop($node, $name, @vals);
+}
+
+sub apply_prop
+{
+	my ($node, $name, @vals) = @_;
+
+	if ($name eq 'status')
+	{
+		@vals = (['"', boolean_value($vals[0][1]) ? 'okay' : 'disabled']);
+	}
+	elsif ($name eq 'bootargs')
+	{
+		# Concatenate bootargs
+		@vals = (['"', get_prop($node, $name)->[1][1] . ' ' .
+			 $vals[0][1]]);
+	}
+
+	return set_prop($node, $name, @vals);
+}
+
+sub delete_prop
+{
+	my ($node, $name) = @_;
+
+	$DB::single = 1 if ($name eq $trace_prop);
+
+	for (my $i = 0; $i < @{$node->[1]}; $i++)
+	{
+		my $prop = $node->[1]->[$i];
+		if ($prop->[0] eq $name)
+		{
+			adj_val_refs(-1, @$prop[1..$#$prop]);
+			return splice(@{$node->[1]}, $i, 1);
+		}
+	}
+
+	return undef;
+}
+
+sub find_prop_chunk
+{
+	my ($node, $propname, $offset, $size, $ovrname, $create) = @_;
+
+	my $chunk;
+	my $prop = get_prop($node, $propname);
+	if (!$prop && $create)
+	{
+		$prop = set_prop($node, $propname, [ '<', $size, [] ]);
+	}
+	return (undef, 0) if (!$prop);
+
+	my $pos = 0;
+	for (my $i = 1; $i < @$prop; $i++)
+	{
+		$chunk = $prop->[$i];
+		my $type = $chunk->[0];
+		my $end;
+		if ($type eq '"')
+		{
+			$end = $pos + length($chunk->[1]) + 1;
+		}
+		elsif ($type eq '[')
+		{
+			$end = $pos + @{$chunk->[1]};
+		}
+		else
+		{
+			$end = $pos + $chunk->[1] * @{$chunk->[2]};
+		}
+		last if ($offset < $end);
+		$pos = $end;
+	}
+
+	if (!$chunk && $create)
+	{
+		$chunk = [ '<', $size, [] ];
+		push @$prop, $chunk;
+	}
+
+	$offset -= $pos;
+	die "* Unaligned override '$ovrname', property $prop\n" if ($offset % $size);
+	return ($chunk, $offset / $size);
+}
+
+sub get_labels
+{
+	my ($node) = @_;
+
+	return sort { $a cmp $b } (@{$node->[3]}) if ($sort);
+	return (@{$node->[3]});
+}
+
+sub integer_value
+{
+	my ($value, $size) = @_;
+	# The following line should say '8=>0xffffffffffffffff', but this upsets
+	# builds of Perl with ivsize=4. This won't give the correct result for
+	# large values but Perl will already have rejected them due to integer
+	# overflow.
+	my %masks = (1=>0xff, 2=>0xffff, 4=>0xffffffff, 8=>-1);
+	return undef if (!defined $value);
+	if ($value =~ /^(y|yes|on|true|down)?$/)
+	{
+		return 1;
+	}
+	elsif ($value =~ /^(n|no|off|false|none)$/)
+	{
+		return 0;
+	}
+	elsif ($value =~ /^up$/)
+	{
+		return 2;
+	}
+	elsif ($value =~ /^&/)
+	{
+		die "* Label '$value' used as non-32-bit integer\n" if ($size != 4);
+		return $value;
+	}
+	elsif ($value =~ /^[0-9]/)
+	{
+		my $mask = $masks{$size};
+		die "* Bad size '$size' for integer\n" if (!$mask);
+		return eval($value) & $mask;
+	}
+	elsif ($value =~ /^[A-Z][A-Z0-9_]+$/)
+	{
+		# Assume it's a valid define, e.g. from a dt-bindings file
+		return $value;
+	}
+	elsif ($value =~ /^\(.+\)$/)
+	{
+		# Assume it's a valid expression
+		return $value;
+	}
+	die "* Bad integer value '$value'\n";
+}
+
+sub boolean_value
+{
+	my ($value) = @_;
+	if ($value =~ /^(y|yes|on|true|okay)?$/)
+	{
+		return 1;
+	}
+	elsif ($value =~ /^(n|no|off|false|disabled)$/)
+	{
+		return 0;
+	}
+	elsif ($value !~ /^[0-9]/)
+	{
+		die "* Bad boolean value '$value'\n";
+	}
+	return $value != 0;
+}
+
+sub byte_array_value
+{
+	my ($value) = @_;
+	my $arr = [ split(/[: ]/, $value) ];
+	foreach my $val (@$arr)
+	{
+		die "* invalid bytestring at '$val'\n"
+		    if ($val !~ /^([0-9a-f][0-9a-f])*$/i);
+	}
+	return $arr;
+}
+
+sub set_add
+{
+	my ($set, $val) = @_;
+
+	for (my $i = 0; $i < @$set; $i++)
+	{
+		return if ((ref $val && $set->[$i] == $val) ||
+			   ($set->[$i] eq $val));
+	}
+	push @$set, $val;
+}
+
+sub set_vals
+{
+	my ($set) = @_;
+	return @$set;
+}
+
+sub set_empty
+{
+	my ($set) = @_;
+	return @$set == 0;
+}
+
+sub map_add
+{
+	my ($map, $name, $val) = @_;
+	$map->{$name} = $val;
+}
+
+sub map_del
+{
+	my ($map, $name) = @_;
+	delete $map->{$name};
+}
+
+sub map_find
+{
+	my ($map, $name) = @_;
+	return $map->{$name};
+}
+
+sub get_int
+{
+	my ($state) = @_;
+	my $head = get_head($state);
+	return undef if ($head !~ /^[0-9]/);
+	get_next($state);
+	return $head;
+}
+
+sub adj_val_refs
+{
+	my ($inc, @vals) = @_;
+	foreach my $val (@vals)
+	{
+		if ($val->[0] eq '&')
+		{
+			adj_ref($inc, $val->[1]);
+		}
+		elsif ($val->[0] eq '<')
+		{
+			foreach my $elem (@{$val->[2]})
+			{
+				adj_ref($inc, $1) if ($elem =~ /^&(.*)/);
+			}
+		}
+	}
+}
+
+sub adj_ref
+{
+	my ($inc, $label) = @_;
+
+	return if (!$cur_dt);
+	$DB::single = 1 if ($inc < 0 && $cur_dt->{'refcount'}->{$label} == 0);
+	$cur_dt->{'refcount'}->{$label} += $inc;
+	printf ("[ ref %s -> %s ]\n", $label, $cur_dt->{'refcount'}->{$label}) if ($label eq $trace_label);
+}
+
+sub usage
+{
+	print STDERR ("Usage: ovmerge <options> <ovspec>\n");
+	print STDERR ("  where <ovspec> is the name of an overlay, optionally followed by\n");
+	print STDERR ("    a comma-separated list of parameters, each with optional '=<value>'\n");
+	print STDERR ("    assignments. The presence of any parameters, or a comma followed by\n");
+	print STDERR ("    no parameters, removes the parameter declarations from the merged\n");
+	print STDERR ("    overlay to avoid a potential name clash.\n");
+	print STDERR ("  and <options> are any of:\n");
+	print STDERR ("    -b <branch>  Read files from specified git branch\n");
+	print STDERR ("    -c      Include 'redo' comment with command line (c.f. '-r')\n");
+	print STDERR ("    -e      Expand mode - list non-skipped lines in order of inclusion\n");
+	print STDERR ("    -h      Display this help info\n");
+	print STDERR ("    -i      Show include hierarchy for each file\n");
+	print STDERR ("    -l      Like expand mode, but labels each line with source file\n");
+	print STDERR ("    -n      No .dts file header (just parsing .dtsi files)\n");
+	print STDERR ("    -p      Emulate Pi firmware manipulation\n");
+	print STDERR ("    -r      Redo command comment in named files (c.f. '-c')\n");
+	print STDERR ("    -s      Sort nodes and properties (for easy comparison)\n");
+	print STDERR ("    -S <n>     Instead of tabs, use 'n' spaces for indentation\n");
+	print STDERR ("    -t      Trace\n");
+	print STDERR ("    -w      Show warnings\n");
+
+	exit(1);
+}
