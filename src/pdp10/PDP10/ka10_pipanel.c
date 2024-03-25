@@ -278,7 +278,8 @@ read_sw()
                 adr_cond |= ((sw & ADR_BRK_SW) == 0) ? ADR_BREAK : 0;
                 nxm_stop = (sw & NXM_STOP) == 0;
 #endif         
-                sing_inst_sw = (sw & SING_INST) == 0;
+                sing_inst_sw = ((sw & SING_INST) == 0) ||
+                               ((sw & SING_CYCL) == 0);
                 /* PAR_STOP handle special features */
                 par_stop = (sw & PAR_STOP) == 0;
                 /* SING_CYCL no function yet */
@@ -483,12 +484,14 @@ void *blink(void *ptr)
        } else {
            AS = new_as;
        }
+
        /* Check repeat count */
        if (rep_count > 0 && --rep_count == 0) {
-           for (col = 0; col < 12; col++) {
+           for (col = 0; col < 10; col++) {
                switch_state[col].changed = switch_state[col].state;
            }
        }
+
        /* Process switch changes if running */
        if (RUN) {
             for (col = 0; col < 10; col++) {
@@ -536,6 +539,7 @@ void *blink(void *ptr)
                 }
             }
        }
+
        /* done with reading the switches, 
         * so start the next cycle of lighting up LEDs
         */
