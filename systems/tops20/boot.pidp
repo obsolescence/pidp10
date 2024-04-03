@@ -1,5 +1,9 @@
 cd /opt/pidp10/systems/tops20
-set console wru=034
+;set console wru=034
+
+set console telnet=buffered=144
+set cons -u telnet=1025
+
 set cpu 4096K kl10b
 set tua rh20
 set tua1 disable
@@ -26,6 +30,15 @@ set cty rsx20
 att lp20 -n prt.lst
 set rpa0 rp07
 at rpa0 -f dbd9 RH20.RP07.1
-att tty -U 2021
+;att tty -U 2021
+att tty -U 10018
 dep sw 254200000147
+echo
+echo =============================
+echo Console is on telnet 1025
+echo Terminal 1 is on telnet 10018
+echo =============================
+echo
 load boot.sav
+co
+
