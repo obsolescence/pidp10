@@ -1,3 +1,4 @@
+cd /opt/pidp10/systems/tops20
 set console wru=034
 set cpu 4096K kl10b
 set tua rh20

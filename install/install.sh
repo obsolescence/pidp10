@@ -73,6 +73,9 @@ case $yn in
 esac
 
 
+# ---------------------------
+# Install required dependencies?
+# ---------------------------
 read -p "Install required dependencies for running the PiDP-10? " yn
 case $yn in
     [Yy]* ) 
@@ -93,8 +96,8 @@ case $yn in
         sudo apt-get install -y screen
 	# Install Tilix, used for pdp view
 	sudo apt -y install tilix
-    sudo apt -y install dconf-editor dconf-cli
-    dconf load /com/gexperts/Tilix/ </opt/pidp10/install/pidp10tilix.conf
+	sudo apt -y install dconf-editor dconf-cli
+	dconf load /com/gexperts/Tilix/ </opt/pidp10/install/pidp10tilix.conf
         ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
@@ -102,9 +105,9 @@ esac
 
 
 # ---------------------------
-# install PDP-10 disk images
+# install ITS disk images
 # ---------------------------
-read -p "Download and install required disk images? " yn
+read -p "Download and install ITS disk images? " yn
 case $yn in
     [Yy]* ) 
         echo -----------------------
@@ -112,9 +115,39 @@ case $yn in
         wget -O /opt/pidp10/systems/its/its-system.zip https://pidp.net/pidp10-sw/its-system.zip
 	unzip -d /opt/pidp10/systems/its /opt/pidp10/systems/its/its-system.zip
         echo -----------------------
-        echo Downloading PDP-10 TOPS-10 disk images
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
+
+
+# ---------------------------
+# install TOPS-10 disk images
+# ---------------------------
+read -p "Download and install TOPS-10 disk images? " yn
+case $yn in
+    [Yy]* ) 
+        echo -----------------------
+        echo Downloading TOPS-10 disk images
         wget -O /opt/pidp10/systems/tops10-603/tops603ka.zip https://pidp.net/pidp10-sw/tops603ka.zip
         unzip -d /opt/pidp10/systems/tops10-603 /opt/pidp10/systems/tops10-603/tops603ka.zip
+        echo -----------------------
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
+
+
+# ---------------------------
+# install TOPS-20 disk images
+# ---------------------------
+read -p "Download and install TOPS-20 disk images? " yn
+case $yn in
+    [Yy]* ) 
+        echo -----------------------
+        echo Downloading TOPS-20 disk images
+        wget -O /opt/pidp10/systems/tops20/tops20-panda.zip https://pidp.net/pidp10-sw/tops20-panda.zip
+	unzip -d /opt/pidp10/systems/tops20 /opt/pidp10/systems/tops20/tops20-panda.zip
         echo -----------------------
         ;;
     [Nn]* ) ;;
@@ -135,8 +168,8 @@ case $ynx in
 		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
 		case $yn in
 			[Pp]* ) 
-				echo copying pidp10.panama to pidp10
-				cp /opt/pidp10/bin/pidp10.panama /opt/pidp10/bin/pidp10
+				echo copying pidp10.old to pidp10
+				cp /opt/pidp10/bin/pidp10.old /opt/pidp10/bin/pidp10
 				# make sure pidp10 simulator has the right privileges
 				# to access GPIO with root privileges:
 				sudo chmod +s /opt/pidp10/bin/pidp10
