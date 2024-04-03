@@ -123,7 +123,7 @@ esac
 
 
 # ---------------------------
-# allow fall-back to old Panama 5 simulator
+# allow fall-back to old simulator
 # ---------------------------
 
 read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx

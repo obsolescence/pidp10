@@ -60,8 +60,16 @@ do_start() {
 	else
 		file_extension=".pi"
 	fi
-	sys=$boot_number
+	sys=`printf "%04o" $boot_number`
+	#sys=$boot_number
 	sel=`awk '$1 == '$sys' { sys = $2; exit } END { if(sys) print sys; else print "hills-blinky" }' < /opt/pidp10/systems/selections`
+	if [ "$boot_number" -ge 16 ]; then
+		pidp_bin="pdp10-ki"
+	fi
+	if [ "$boot_number" -ge 64 ]; then
+		pidp_bin="pdp10-kl"
+	fi
+
 	echo Starting PiDP-10
 	cd $pidp_dir
 	echo screen -dmS pidp10 ./$pidp_bin /opt/pidp10/systems/$sel/boot$file_extension

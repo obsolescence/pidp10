@@ -1,0 +1,30 @@
+set console wru=034
+set cpu 4096K kl10b
+set tua rh20
+set tua1 disable
+set tua2 disable
+set tua3 disable
+set tua4 disable
+set tua5 disable
+set tua6 disable
+set tua7 disable
+set rpa rh20
+set rpa1 disable
+set rpa2 disable
+set rpa3 disable
+set rpa4 disable
+set rpa5 disable
+set rpa6 disable
+set rpa7 disable
+set rpb rh20
+set rpb disable
+set ni enable
+set ni mac=12:34:56:78:9A:BC
+at ni tap:tap0
+set cty rsx20
+att lp20 -n prt.lst
+set rpa0 rp07
+at rpa0 -f dbd9 RH20.RP07.1
+att tty -U 2021
+dep sw 254200000147
+load boot.sav
