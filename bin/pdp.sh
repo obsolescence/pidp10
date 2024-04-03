@@ -22,10 +22,10 @@ else
 			nohup lxterminal --command="telnet localhost 1025" > /dev/null 2>&1 &
 			;;
 		vt52)
-			nohup /opt/pidp10/bin/vt52 -B -b 9600 telnet localhost 10018 > /dev/null 2>&1 &
+			nohup /opt/pidp10/bin/vt52 -B telnet localhost 10018 > /dev/null 2>&1 &
 			;;
 		vt05)
-			nohup /opt/pidp10/bin/vt05 -B -b 9600 telnet localhost 10018 > /dev/null 2>&1 &
+			nohup /opt/pidp10/bin/vt05 -B telnet localhost 10018 > /dev/null 2>&1 &
 			;;
 #		tv11)
 # no need to launch tv11 manually, done from its boot.ini
@@ -47,7 +47,7 @@ else
 			nohup /opt/pidp10/bin/tek4010 -b9600 telnet localhost 10017 > /dev/null 2>&1 &
 			;;
 		dp3300)
-			nohup /opt/pidp10/bin/dp3300 -a -B -b 4800 telnet localhost 10020 > /dev/null 2>&1 &	
+			nohup /opt/pidp10/bin/dp3300 -a -B telnet localhost 10020 > /dev/null 2>&1 &	
 			;;
 		pdp6)
 			echo unimplemented - start manually: $1
