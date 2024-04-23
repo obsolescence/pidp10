@@ -105,6 +105,22 @@ esac
 
 
 # ---------------------------
+# download manual
+# ---------------------------
+read -p "Download manual to /opt/pidp10/bin/manual.docx (MS Word format)? " yn
+case $yn in
+    [Yy]* ) 
+        echo -----------------------
+        echo Download
+        wget -O /opt/pidp10/manual.docx https://pidp.net/pidp10-sw/manual.docx
+        echo -----------------------
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
+
+
+# ---------------------------
 # install ITS disk images
 # ---------------------------
 read -p "Download and install ITS disk images? " yn
