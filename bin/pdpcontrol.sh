@@ -116,7 +116,7 @@ case "$1" in
 
   restart)
 	do_stop
-	sleep 2
+	sleep 8
 	do_start
 	;;
 
