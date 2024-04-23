@@ -123,6 +123,14 @@ att ch 44042
 ; ------------
 
 
+;set ocnsls enabled
+;set wcnsls enabled joystick 
+set wcnsls enabled joystick cscope
+set dpy ena
+
+
+
+
 ; do a 'boot ptr' to skip READ IN for Pi's without PiDP hardware
 ; ----------------------------------------------------------------
 b ptr
