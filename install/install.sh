@@ -4,7 +4,6 @@
 # install script for PiDP-10
 # v0.20240304
 #
-
 # check this script is NOT run as root
 if [ "$(whoami)" == "root" ]; then
     echo script must NOT be run as root
@@ -140,6 +139,7 @@ esac
 # ---------------------------
 # install TOPS-10 disk images
 # ---------------------------
+echo "NOTE: TOPS-10 disk images were updated on 2024-04-27, if in doubt say yes:"
 read -p "Download and install TOPS-10 disk images? " yn
 case $yn in
     [Yy]* ) 
@@ -171,48 +171,48 @@ case $yn in
 esac
 
 
-# ---------------------------
-# allow fall-back to old simulator
-# ---------------------------
-
-read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
-case $ynx in
-	[Yy]* ) 
-		echo Leaving things untouched
-		;;
-	[Nn]* ) 
-		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
-		case $yn in
-			[Pp]* ) 
-				echo copying pidp10.old to pidp10
-				cp /opt/pidp10/bin/pidp10.old /opt/pidp10/bin/pidp10
-				# make sure pidp10 simulator has the right privileges
-				# to access GPIO with root privileges:
-				sudo chmod +s /opt/pidp10/bin/pidp10
-				# to run a RT thread:
-				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
-				;;
-			[Cc]* ) 
-				echo copying pdp10-ka to pidp10
-				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10
-				# make sure pidp10 simulator has the right privileges
-				# to access GPIO with root privileges:
-				sudo chmod +s /opt/pidp10/bin/pidp10
-				# to run a RT thread:
-				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
-				;;
-			[Ll]* ) 
-				echo Leaving things untouched from how they were
-				;;
-			* ) 
-				echo "Please answer p,c, or in case of doubt, l."
-				;;
-		esac
-		;;
-	* ) 
-		echo "Please answer yes or no."
-		;;
-esac
+## ---------------------------
+## allow fall-back to old simulator
+## ---------------------------
+#
+#read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
+#case $ynx in
+#	[Yy]* ) 
+#		echo Leaving things untouched
+#		;;
+#	[Nn]* ) 
+#		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
+#		case $yn in
+#			[Pp]* ) 
+#				echo copying pidp10.old to pidp10
+#				cp /opt/pidp10/bin/pidp10.old /opt/pidp10/bin/pidp10
+#				# make sure pidp10 simulator has the right privileges
+#				# to access GPIO with root privileges:
+#				sudo chmod +s /opt/pidp10/bin/pidp10
+#				# to run a RT thread:
+#				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
+#				;;
+#			[Cc]* ) 
+#				echo copying pdp10-ka to pidp10
+#				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10
+#				# make sure pidp10 simulator has the right privileges
+#				# to access GPIO with root privileges:
+#				sudo chmod +s /opt/pidp10/bin/pidp10
+#				# to run a RT thread:
+#				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
+#				;;
+#			[Ll]* ) 
+#				echo Leaving things untouched from how they were
+#				;;
+#			* ) 
+#				echo "Please answer p,c, or in case of doubt, l."
+#				;;
+#		esac
+#		;;
+#	* ) 
+#		echo "Please answer yes or no."
+#		;;
+#esac
 
 
 # ---------------------------
@@ -277,8 +277,8 @@ case $yn in
 	sudo apt install -y libvdeplug2
 	# addl from Lars' its/build/dependencies script
 	sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
-# for networking support in simh:
-        sudo apt-get install -y libpcap-dev
+	# for networking support in simh:
+	sudo apt-get install -y libpcap-dev
         sudo apt-get install -y libvdeplug-dev
         #Install readline, used for command-line editing in simh
         sudo apt-get install -y libreadline-dev
@@ -329,26 +329,84 @@ append_to_file() {
             sed -e "\$apdpcontrol start" -i $1
         fi
 }
+append_to_wayland() {
+	# first, make backup copy of .bashrc...
+        test ! -f $1.backup && cp -p $1 $1.backup
+        # add the line to wayfire.ini if not there yet
+        if grep -xq "pdpcontrol start" $1
+        then
+            echo wayfire.ini modification already done, OK.
+        else
+            sed -e "\$a\ \n\[autostart]\npdpcontrol start" -i $1
+	    echo wayfire.ini modified with autostart
+        fi
+}
 
-read -p "Automatically start the PiDP-10 core when logging in? " yn
-case $yn in
-    [Yy]* ) 
-	echo testing for .profile or otherwise, .bash_profile
-	if [ -f "$HOME/.profile" ]; then
-		echo .profile found
-		append_to_file "$HOME/.profile"
+# Wayland...of course has a problem doing things the old way, so...
+if [ ! -z "$WAYLAND_DISPLAY" ]; then
+	read -p "Automatically start the PiDP-10 core when logging in? " yn
+	echo "...running under Wayland, modifying wayfire.ini..."
+	case $yn in
+		[Yy]* ) 
+			echo "testing for wayfire.ini"
+			if [ -f "$HOME/.config/wayfire.ini" ]; then
+				append_to_wayland "$HOME/.config/wayfire.ini"
 
-	elif [ -f "$HOME/.bash_profile" ]; then
-		echo .bash_profile found
-		append_to_file "$HOME/.bash_profile"
-	else
-		echo no .profile or .bash_profile found. Odd. Skipping autorun
-	fi
-        ;;
-    [Nn]* ) ;;
-        * ) echo "Please answer yes or no.";;
-esac
+			else
+				echo wayfire.ini not found. Odd. Skipping autorun
+			fi
+			# also, check if pdpcontrol start was left from a previous install
+			# because up til 20240427 install always used .profile, even under Wayland.
+			# if so, remove it
+			if [ -f "$HOME/.profile" ]; then
+				if grep -xq "pdpcontrol start" "$HOME/.profile"
+				then
+					echo removing pdpcontrol from .profile
+					sed -i '/pdpcontrol start/d' "$HOME/.profile"
+					echo removed pdpcontrol from .profile
+				else
+					echo no need to change .profile, pdpcontrol not in it
+				fi
+			elif [ -f "$HOME/.bash_profile" ]; then
+				if grep -xq "pdpcontrol start" "$HOME/.bash_profile"
+				then
+					echo removing pdpcontrol from .bash_profile
+					sed -i '/pdpcontrol start/d' "$HOME/.bash_profile"
+					echo removed pdpcontrol from .bash_profile
+				else
+					echo no need to change .bash_profile, pdpcontrol not in it
+				fi
+			else
+				echo .(bash_)profile not found. Odd. 
+			fi
+			;;
+		[Nn]* ) ;;
+		* ) echo "Please answer yes or no.";;
+	esac
+#in case running under X11:
+elif [ ! -z "$DISPLAY" ]; then
+	read -p "Automatically start the PiDP-10 core when logging in? " yn
+	echo "running under X11, not Wayland, modifying .profile or .bash_profile..."
+	case $yn in
+		[Yy]* ) 
+			echo testing for .profile or otherwise, .bash_profile
+			if [ -f "$HOME/.profile" ]; then
+				echo .profile found
+				append_to_file "$HOME/.profile"
 
+			elif [ -f "$HOME/.bash_profile" ]; then
+				echo .bash_profile found
+				append_to_file "$HOME/.bash_profile"
+			else
+				echo no .profile or .bash_profile found. Odd. Skipping autorun
+			fi
+			;;
+		[Nn]* ) ;;
+		* ) echo "Please answer yes or no.";;
+	esac
+else
+	echo "cannot find either Wayland or X11, autostarting PiDP-10 skipped"
+fi
 
 # ---------------------------
 # install Teletype font
