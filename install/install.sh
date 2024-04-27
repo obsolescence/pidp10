@@ -377,7 +377,7 @@ if [ ! -z "$WAYLAND_DISPLAY" ]; then
 					echo no need to change .bash_profile, pdpcontrol not in it
 				fi
 			else
-				echo .(bash_)profile not found. Odd. 
+				echo .profile or .bash_profile not found. Odd. 
 			fi
 			;;
 		[Nn]* ) ;;
