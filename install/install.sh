@@ -337,7 +337,7 @@ append_to_wayland() {
         then
             echo wayfire.ini modification already done, OK.
         else
-            sed -e "\$a\ \n\[autostart]\npdpcontrol start" -i $1
+            sed -e "\$a\ \n\[autostart]\npidp = pdpcontrol start" -i $1
 	    echo wayfire.ini modified with autostart
         fi
 }
