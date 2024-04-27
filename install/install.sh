@@ -21,7 +21,7 @@ echo PiDP-10 install script
 echo ======================
 echo This script is minimally invasive to your Linux. All it does outside
 echo its own directory is, if you allow, \(a\) make 2 links in \/usr\/bin and
-echo \(b\) add \'pdpcontrol\' to your \~\/.profile
+echo \(b\) add \'pdpcontrol\' to your wayfire.ini or \~\/.profile
 echo
 echo The script can be re-run later on to add the source code and its 
 echo dependencies. Re-running the script and answering \'n\' to questions
