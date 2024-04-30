@@ -459,6 +459,6 @@ esac
 
 
 echo
-echo Done.
+echo Done. Please reboot for all changes to take effect.
 echo
 
