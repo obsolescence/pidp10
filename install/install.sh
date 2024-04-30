@@ -435,7 +435,7 @@ case $yn in
 		# desktop files in Pi menu
 		cp /opt/pidp10/install/desktop-files/* ~/.local/share/applications/
 		# pdp view as icon on the desktop
-		cp /opt/pidp10/install/desktop-files/view* ~/Desktop/
+		cp /opt/pidp10/install/desktop-files/*.desktop ~/Desktop/
 		# let desktop icons run without anoying dialog box
 		sed -i 's/^quick_exec=.*/quick_exec=1/' ~/.config/libfm/libfm.conf
 		;;
