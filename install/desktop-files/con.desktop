@@ -1,6 +1,5 @@
 [Desktop Entry]
-Name=Teletype
-GenericName=PDP-10 Peripheral Manager
+Name=Noisy Teletype
 Comment=MAnage PDP-10 peripherals
 Exec=nohup pdp con
 Terminal=true
@@ -8,4 +7,4 @@ Type=Application
 Icon=/opt/pidp10/install/icons/con.svg
 Categories=X-PDP10;
 StartupNotify=false
-Name[en_GB]=Noisy Teletype
+

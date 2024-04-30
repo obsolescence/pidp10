@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=SIMH Screen
+Name=Imlac
 Comment=MAnage PDP-10 peripherals
-Exec=lxterminal -e "pdp"
+Exec=nohup pdp imlac
 Terminal=true
 Type=Application
-Icon=/opt/pidp10/install/icons/simh.svg
+Icon=/opt/pidp10/install/icons/imlac.svg
 Categories=X-PDP10;
 StartupNotify=false
