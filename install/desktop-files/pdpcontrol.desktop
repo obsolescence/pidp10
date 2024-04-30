@@ -1,10 +1,11 @@
 [Desktop Entry]
-Name=Knight TV
+Name=PDP Control
 GenericName=PDP-10 Peripheral Manager
 Comment=MAnage PDP-10 peripherals
-Exec=nohup pdp tvcon
+Exec=lxterminal -e "pdpcontrol"
 Terminal=true
 Type=Application
-Icon=/opt/pidp10/install/icons/knight.svg
+Icon=/opt/pidp10/install/icons/pdp10.svg
 Categories=X-PDP10;
 StartupNotify=false
+Name[en_GB]=PDP Control

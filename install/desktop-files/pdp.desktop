@@ -1,10 +1,11 @@
 [Desktop Entry]
-Name=PDP-10 Core (simh)
+Name=SIMH Screen
 GenericName=PDP-10 Peripheral Manager
 Comment=MAnage PDP-10 peripherals
 Exec=lxterminal -e "pdp"
 Terminal=true
 Type=Application
-Icon=/opt/pidp10/install/desktop-files/pdp10.svg
+Icon=/opt/pidp10/install/icons/simh.svg
 Categories=X-PDP10;
 StartupNotify=false
+Name[en_GB]=SIMH screen

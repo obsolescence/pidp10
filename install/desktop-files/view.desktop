@@ -5,6 +5,6 @@ Comment=Manage PDP-10 peripherals
 Exec=nohup tilix -s /opt/pidp10/install/view.json
 Terminal=false
 Type=Application
-Icon=/opt/pidp10/install/icons/pdp10.svg
+Icon=/opt/pidp10/install/icons/view.svg
 Categories=X-PDP10;
 StartupNotify=true

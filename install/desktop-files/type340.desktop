@@ -1,10 +1,11 @@
 [Desktop Entry]
-Name=PDP-10 Core (simh)
-GenericName=PDP-10 Peripheral Manager
+Name=Type 340
+GenericName=Type 340 display
 Comment=MAnage PDP-10 peripherals
-Exec=lxterminal -e "pdp"
+Exec=lxterminal -e "pdp type340"
 Terminal=true
 Type=Application
-Icon=/opt/pidp10/install/desktop-files/type340.svg
+Icon=/opt/pidp10/install/icon/type340.svg
 Categories=X-PDP10;
 StartupNotify=false
+Name[en_GB]=type340

@@ -53,15 +53,17 @@ do_start() {
 	    echo "PiDP-10 is already running, not starting again." >&2
 	    exit 0
 	fi
-	if [ $argc -ne 2 ]; then
+
+	if [[ $argc -eq 2 ||  ! -z "$boot_number" ]]; then
+		file_extension=".pi"
+		sys=$boot_number
+	else
+		file_extension=".pidp"
 		/opt/pidp10/bin/scansw10
 		boot_number=$?
-		file_extension=".pidp"
-	else
-		file_extension=".pi"
+		sys=`printf "%04o" $boot_number`
 	fi
-	sys=`printf "%04o" $boot_number`
-	#sys=$boot_number
+
 	sel=`awk '$1 == '$sys' { sys = $2; exit } END { if(sys) print sys; else print "hills-blinky" }' < /opt/pidp10/systems/selections`
 	if [ "$boot_number" -ge 16 ]; then
 		pidp_bin="pdp10-ki"
@@ -70,7 +72,7 @@ do_start() {
 		pidp_bin="pdp10-kl"
 	fi
 
-	echo Starting PiDP-10
+	echo "Starting PiDP-10 with boot option $sys"
 	cd $pidp_dir
 	echo screen -dmS pidp10 ./$pidp_bin /opt/pidp10/systems/$sel/boot$file_extension
 	screen -dmS pidp10 ./$pidp_bin /opt/pidp10/systems/$sel/boot$file_extension
@@ -125,11 +127,45 @@ case "$1" in
 	;;
 
   stat)
-	  do_stat
+	do_stat
 	;;
-  *)
+  ?)
 	echo "Usage: pdpcontrol {start|stop|restart|status|stat}" || true
 	exit 1
+	;;
+  *)
+	do_stat
+	if [ $status == 0 ]; then
+		read -p "(S)tart, Start with boot (number), or (C)ancel? " respx
+		case $respx in
+			[Ss]* )
+				do_start
+				;;
+			[0-9]* )
+				boot_number=$respx
+				# convert to decimal
+				#boot_number=$((8#$ooot_number))
+				do_start
+				;;
+			[Cc]* )
+				exit 1
+				;;
+			* )
+				echo "Please answer with S, a boot number, or C.";;
+		esac
+	else
+		read -p "(S)top or (C)ancel? " respx
+		case $respx in
+			[Ss]* )
+				do_stop
+				;;
+			[Cc]* )
+				exit 1
+				;;
+			* )
+				echo "Please answer with S or C.";;
+		esac
+	fi
 esac
-
 exit 0
+
