@@ -10,6 +10,9 @@ sleep 2
 send "\x05"
 sleep 2
 # ----
+send "set dpy dis\r"
+sleep 4
+# ----
 send "set dpy ena\r"
 sleep 2
 send "co\r"
