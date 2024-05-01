@@ -2,9 +2,6 @@
 
 # Github repository for the PiDP-10 project
 
-Work in progress, supporting the PiDP-10 replica. 
-<br>As of March 2024, this is in beta stage for the first 50 daring builders (thank you for helping in the beta phase). The code will change rapidly this month, then be out of beta in April.
-
 Main web sites:
 
 https://obsolescence.dev/pidp10 - Overview & context
