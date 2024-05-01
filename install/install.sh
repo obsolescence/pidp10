@@ -37,6 +37,7 @@ echo NEW SIMULATOR VERSION FROM RICHARD CORNWELL
 echo boot sequence for ITS is now: press STOP, press READ IN, go to the
 echo Teletype and enter ITS\<enter\>\<esc\>G
 echo
+echo
 
 read -p "Set required access privileges to pidp10 simulator? " yn
 case $yn in
@@ -61,6 +62,7 @@ esac
 # ---------------------------
 # Copy control scripts (pdpcontrol, pdp) to /usr/local/bin?
 # ---------------------------
+echo
 read -p "Copy control script links (pdpcontrol, pdp) to /usr/local/bin? " yn
 case $yn in
     [Yy]* ) 
@@ -75,6 +77,7 @@ esac
 # ---------------------------
 # Install required dependencies?
 # ---------------------------
+echo
 read -p "Install required dependencies for running the PiDP-10? " yn
 case $yn in
     [Yy]* ) 
@@ -106,6 +109,7 @@ esac
 # ---------------------------
 # download manual
 # ---------------------------
+echo
 read -p "Download manual to /opt/pidp10/bin/manual.docx (MS Word format)? " yn
 case $yn in
     [Yy]* ) 
@@ -122,6 +126,7 @@ esac
 # ---------------------------
 # install ITS disk images
 # ---------------------------
+echo
 read -p "Download and install ITS disk images? " yn
 case $yn in
     [Yy]* ) 
@@ -139,7 +144,9 @@ esac
 # ---------------------------
 # install TOPS-10 disk images
 # ---------------------------
+echo
 echo "NOTE: TOPS-10 disk images were updated on 2024-04-27, if in doubt say yes:"
+echo
 read -p "Download and install TOPS-10 disk images? " yn
 case $yn in
     [Yy]* ) 
@@ -157,6 +164,7 @@ esac
 # ---------------------------
 # install TOPS-20 disk images
 # ---------------------------
+echo
 read -p "Download and install TOPS-20 disk images? " yn
 case $yn in
     [Yy]* ) 
@@ -175,6 +183,7 @@ esac
 ## allow fall-back to old simulator
 ## ---------------------------
 #
+#echo
 #read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
 #case $ynx in
 #	[Yy]* ) 
@@ -218,6 +227,7 @@ esac
 # ---------------------------
 # install source code of Richard Cornwell's PDP-10 emulators
 # ---------------------------
+echo
 read -p "Download Richard Cornwell's PDP-10 emulator source code? " yn
 case $yn in
     [Yy]* ) 
@@ -246,6 +256,7 @@ esac
 # ---------------------------
 # install Lars Brinkhoff's full ITS project
 # ---------------------------
+echo
 read -p "Download Lars Brinkhoff's ITS project source code? " yn
 case $yn in
     [Yy]* ) 
@@ -262,6 +273,10 @@ case $yn in
 esac
 
 
+# ---------------------------
+# install dependencies for compiling source code
+# ---------------------------
+echo
 read -p "Install add'l dependencies for compiling the source code? " yn
 case $yn in
     [Yy]* ) 
@@ -300,6 +315,7 @@ esac
 # ---------------------------
 # let raspi-config enable i2c, VNC, X11-not-Wayland?
 # ---------------------------
+echo
 read -p "Let raspi-config enable i2c, VNC? " yn
 case $yn in
     [Yy]* ) 
@@ -318,6 +334,7 @@ esac
 # ---------------------------
 # Start up the PDP-10 automatically when logging in?
 # ---------------------------
+echo
 append_to_file() {
 	# first, make backup copy of .bashrc...
         test ! -f $1.backup && cp -p $1 $1.backup
@@ -350,10 +367,16 @@ if [ ! -z "$WAYLAND_DISPLAY" ]; then
 		[Yy]* ) 
 			echo "testing for wayfire.ini"
 			if [ -f "$HOME/.config/wayfire.ini" ]; then
-				append_to_wayland "$HOME/.config/wayfire.ini"
 
+				if grep -q "pdpcontrol start" "$HOME/.config/wayfire.ini" 
+				then
+					echo "...Autostart already in wayfire.ini"
+				else
+					append_to_wayland "$HOME/.config/wayfire.ini"
+					echo "...Autostart added to wayfire.ini"
+				fi
 			else
-				echo wayfire.ini not found. Odd. Skipping autorun
+				echo "...wayfire.ini not found. Odd. Skipping autorun"
 			fi
 			# also, check if pdpcontrol start was left from a previous install
 			# because up til 20240427 install always used .profile, even under Wayland.
@@ -383,10 +406,28 @@ if [ ! -z "$WAYLAND_DISPLAY" ]; then
 		[Nn]* ) ;;
 		* ) echo "Please answer yes or no.";;
 	esac
+#--- patch 20240501
+#--- problem: previous version checked for Wayland, then X11. But forgot that some people install headless
+#--- so this is removed:
 #in case running under X11:
-elif [ ! -z "$DISPLAY" ]; then
+#elif [ ! -z "$DISPLAY" ]; then
+#--- and this installs autostart for both X11 and headless (or, for anything else than Wayland):
+else
 	read -p "Automatically start the PiDP-10 core when logging in? " yn
-	echo "running under X11, not Wayland, modifying .profile or .bash_profile..."
+	echo "not running Wayland, so modifying .profile or .bash_profile..."
+	echo
+	echo "-------------------------------------------------------------------------------"
+	echo "Please read this:"
+	echo "The Raspberry Pi GUI switched from X11 to Wayland."
+	echo "It seems that you are running the install script either under X11, or headless."
+	echo "Either way, in both those cases, the autostart is done by adding to ~/.profile."
+	echo "But if you later will use the default Pi GUI under Wayland,"
+        echo "the PDP-10 will start without the type340 display. "
+	echo "In which case: --> run this section of the install script again."
+	echo
+	echo "(negative comment on the manner in which Wayland breaks stuff removed)"
+	echo "-------------------------------------------------------------------------------"
+	echo
 	case $yn in
 		[Yy]* ) 
 			echo testing for .profile or otherwise, .bash_profile
@@ -404,8 +445,10 @@ elif [ ! -z "$DISPLAY" ]; then
 		[Nn]* ) ;;
 		* ) echo "Please answer yes or no.";;
 	esac
-else
-	echo "cannot find either Wayland or X11, autostarting PiDP-10 skipped"
+#--- patch 20240501 part 2
+#else
+#	echo "cannot find either Wayland or X11, autostarting PiDP-10 skipped"
+#---
 fi
 
 # ---------------------------
@@ -436,8 +479,22 @@ case $yn in
 		cp /opt/pidp10/install/desktop-files/* ~/.local/share/applications/
 		# pdp view as icon on the desktop
 		cp /opt/pidp10/install/desktop-files/*.desktop ~/Desktop/
-		# let desktop icons run without anoying dialog box
-		sed -i 's/^quick_exec=.*/quick_exec=1/' ~/.config/libfm/libfm.conf
+		# let desktop icons run without annoying dialog box
+		
+		
+		if [ -f "$HOME/.config/libfm/libfm.conf" ]; then
+			sed -i 's/^quick_exec=.*/quick_exec=1/' ~/.config/libfm/libfm.conf
+		else
+			echo
+			echo "-----------------------------------------------------------------------"
+			echo "Note:"
+		        echo " Double-clicking desktop icons on the Pi GUI always asks you"
+			echo " 'if you want to execute this file'. To get rid of that annoyance"
+			echo " go to the file manager's preferences and set"
+			echo " Edit > Preferences > General > Don't ask options on launch executable"
+			echo "-----------------------------------------------------------------------"
+			echo
+		fi	
 		;;
 	[Nn]* ) ;;
 	* ) echo "Please answer yes or no.";;
@@ -447,15 +504,15 @@ esac
 # ---------------------------
 # reduce telnet unblock time
 # ---------------------------
-echo If you are not installing on a Pi, say No:
-read -p "Reduce telnet release time? " yn
-case $yn in
-	[Yy]* ) 
-		sudo sysctl -w net.ipv4.tcp_fin_timeout=1
-		;;
-	[Nn]* ) ;;
-	* ) echo "Please answer yes or no.";;
-esac
+#echo If you are not installing on a Pi, say No:
+#read -p "Reduce telnet release time? " yn
+#case $yn in
+#	[Yy]* ) 
+#		sudo sysctl -w net.ipv4.tcp_fin_timeout=1
+#		;;
+#	[Nn]* ) ;;
+#	* ) echo "Please answer yes or no.";;
+#esac
 
 
 echo
