@@ -5,7 +5,7 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = "TELETYPE 1945\\-1985:pixelsize=18:antialias=true:autohint=true";
+static char *font = "TELETYPE 1945\\-1985:pixelsize=12:antialias=true:autohint=true";
 //static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true";
 static int borderpx = 2;
 
