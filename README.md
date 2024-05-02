@@ -39,7 +39,7 @@ This repository is really for the PiDP-10 - or a regular Raspberry Pi (4 or 5 re
 Explanation: there's lots of simulator programs next to the PDP-10 engine itself (they're all in /opt/pidp10/bin) to simulate various hooked-up hardware from the MIT AI lab. Some PDP-11s, a PDP-6, other computers, terminals, etc. 
 <br>This is the hardware farm that becomes your playground. Most of the simulator programs connect with each other through telnet links (even if the simulated machines think it's serial ports and other cabling, it is all telnet in truth).
 
-So not everything has to run on the PiDP-10 itself. It is quite normal to run the Knight TV terminal simulator on your laptop, logging in to the PiDP-10 remotely. You might even invite others for a  multiplayer Mazewar session, each connecting to the PiDP-10 from their own location.
+So not everything has to run on the PiDP-10 itself. It is quite normal to run the Knight TV terminal simulator on your laptop, logging in to the PiDP-10 remotely. You might even invite others for a  multiplayer Mazewar session, each connecting to the PiDP-10 from their own location. See https://github.com/obsolescence/rpdp for installing the terminal simulators on your laptop/desktop.
 
 Two control scripts regulate the PDP-10:
 
