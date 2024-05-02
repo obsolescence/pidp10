@@ -362,7 +362,7 @@ append_to_wayland() {
 # Wayland...of course has a problem doing things the old way, so...
 if [ ! -z "$WAYLAND_DISPLAY" ]; then
 	read -p "Automatically start the PiDP-10 core when logging in? " yn
-	echo "...running under Wayland, modifying wayfire.ini..."
+	echo "...running under Wayland, would modify wayfire.ini..."
 	case $yn in
 		[Yy]* ) 
 			echo "testing for wayfire.ini"
