@@ -58,7 +58,8 @@ The project will actually run just fine on a Linux laptop instead of a Pi. There
 
 ## 4. Using terminals on a Linux laptop to connect with the PiDP-10
 
-Install the project on your X86 Linux machine as per section 3 above. Then, edit the /opt/pip10/bin/pdp.sh script, and where it says 'localhost', change that to raspberrypi.local, or whatever name you gave the Pi. You might want to save the edited script a different name, pdp-remote.sh or somesuch. `./pdp-remote.sh tvcon` will then connect your Knight TV to the PiDP-10.
+Install https://github.com/obsolescence/rpdp on your X86 Linux machine (Windows 11 with WSL also works). After installing that, `./r****pdp tvcon` will  connect your Knight TV to the PiDP-10.
+Note: rpdp will work on raspberry Pi's as well.
 
 
 ## 5. Command & Control your hardware lab
