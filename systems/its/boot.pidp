@@ -137,14 +137,13 @@ dep readin 104
 ; ----------------------------------------------------------------
 ; so the user has a PiDP-10 front panel and should press READ IN before
 ; booting starts.
-; This little blinky program is run until the moment that he does:
-d 1000 201000000777
-d 1001 241000000001
-d 1002 202000001007
-d 1003 700540001007
-d 1004 201100060650
-d 1005 366100001005
-d 1006 324000001001
-d 1007 000000000000
+; This little blinky program is run until the moment that they do:
+d 1000 MOVEI 1,777
+d 1001 ROT 1,1
+d 1002 DATAO PI,1
+d 1003 CONSO 0,1000
+d 1004 JRST 1003
+d 1005 CONO 0,1000
+d 1006 JRST 1001
 go 1000
 ;b ptr
