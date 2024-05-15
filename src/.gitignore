@@ -1,0 +1,7 @@
+# its comes from https://github.com/PDP-10/its.git, but not as a submodule, so
+# we want to exclude it.
+its
+
+# pidp10 comes from https://github.com/rcornwell/pidp10, but not as a
+# submodule, so we want to exclude it.
+pidp10
