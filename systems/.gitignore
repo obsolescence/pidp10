@@ -1,0 +1,5 @@
+# The installer wgets tops20-panda.zip and then unpacks it.  No need to include
+# this stuff.
+boot.sav
+RH20.RP07.1
+tops20-panda.zip
