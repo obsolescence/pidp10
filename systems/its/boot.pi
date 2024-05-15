@@ -69,15 +69,21 @@ set imp mac=e2:6c:84:1d:34:a3
 #---------------------------
 # option 1: lowest-effort networking using simh NAT interface
 # KA10 ip address will be 10.0.2.15
-set imp dhcp
-set imp host=10.3.0.6
-at imp nat:tcp=2123:10.0.2.15:23,tcp=2121:10.0.2.15:21,tcp=2195:10.0.2.15:95
+#set imp dhcp
+#set imp host=10.3.0.6
+#at imp nat:tcp=2123:10.0.2.15:23,tcp=2121:10.0.2.15:21,tcp=2195:10.0.2.15:95
 #---------------------------
 #option 2: the default setup
 #set imp ip=192.168.2.101/24
 #set imp gw=172.31.1.100
 #set imp host=10.3.0.6
 #at imp tap:tap0
+#---------------------------
+#option 3: custom Falco setup
+set imp ip=192.168.0.7/24
+set imp gw=192.168.0.1
+set imp host=10.3.0.6
+at imp tap:tap0
 #---------------------------
 at ptr ./dskdmp.rim
 at dpa0 ./rp03.2
