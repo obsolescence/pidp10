@@ -111,10 +111,11 @@ set imx channel=76;unit3;axis1;negate
 set imx channel=74;unit3;axis3
 
 ; ------------
-; enable chaosnet
+; enable chaosnet - use 127.0.0.1 rather than localhost, since we prefer
+; not to use IPv6 here.
 set ch enabled
 set ch node=177002
-set ch peer=localhost:44041
+set ch peer=127.0.0.1:44041
 att ch 44042
 ; --------------
 ; just quit on SIGTERM
