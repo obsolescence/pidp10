@@ -213,11 +213,11 @@ extern DEBTAB crd_debug[];
 #define IOCTL    00000017000000LL
 #endif
 
-#define ADR_IFETCH  020 
-#define ADR_DFETCH  010 
-#define ADR_WRITE   004 
-#define ADR_STOP    002 
-#define ADR_BREAK   001 
+#define ADR_IFETCH  020
+#define ADR_DFETCH  010
+#define ADR_WRITE   004
+#define ADR_STOP    002
+#define ADR_BREAK   001
 
 /* IRQ Flags in APR */
 #if KL
