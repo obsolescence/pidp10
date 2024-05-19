@@ -4,7 +4,6 @@
 # install script for PiDP-10
 # v0.20240304
 #
-
 # check this script is NOT run as root
 if [ "$(whoami)" == "root" ]; then
     echo script must NOT be run as root
@@ -22,7 +21,7 @@ echo PiDP-10 install script
 echo ======================
 echo This script is minimally invasive to your Linux. All it does outside
 echo its own directory is, if you allow, \(a\) make 2 links in \/usr\/bin and
-echo \(b\) add \'pdpcontrol\' to your \~\/.profile
+echo \(b\) add \'pdpcontrol\' to your wayfire.ini or \~\/.profile
 echo
 echo The script can be re-run later on to add the source code and its 
 echo dependencies. Re-running the script and answering \'n\' to questions
@@ -37,6 +36,7 @@ echo
 echo NEW SIMULATOR VERSION FROM RICHARD CORNWELL
 echo boot sequence for ITS is now: press STOP, press READ IN, go to the
 echo Teletype and enter ITS\<enter\>\<esc\>G
+echo
 echo
 
 read -p "Set required access privileges to pidp10 simulator? " yn
@@ -62,6 +62,7 @@ esac
 # ---------------------------
 # Copy control scripts (pdpcontrol, pdp) to /usr/local/bin?
 # ---------------------------
+echo
 read -p "Copy control script links (pdpcontrol, pdp) to /usr/local/bin? " yn
 case $yn in
     [Yy]* ) 
@@ -76,6 +77,7 @@ esac
 # ---------------------------
 # Install required dependencies?
 # ---------------------------
+echo
 read -p "Install required dependencies for running the PiDP-10? " yn
 case $yn in
     [Yy]* ) 
@@ -107,6 +109,7 @@ esac
 # ---------------------------
 # download manual
 # ---------------------------
+echo
 read -p "Download manual to /opt/pidp10/bin/manual.docx (MS Word format)? " yn
 case $yn in
     [Yy]* ) 
@@ -123,6 +126,7 @@ esac
 # ---------------------------
 # install ITS disk images
 # ---------------------------
+echo
 read -p "Download and install ITS disk images? " yn
 case $yn in
     [Yy]* ) 
@@ -140,6 +144,9 @@ esac
 # ---------------------------
 # install TOPS-10 disk images
 # ---------------------------
+echo
+echo "NOTE: TOPS-10 disk images were updated on 2024-04-27, if in doubt say yes:"
+echo
 read -p "Download and install TOPS-10 disk images? " yn
 case $yn in
     [Yy]* ) 
@@ -157,6 +164,7 @@ esac
 # ---------------------------
 # install TOPS-20 disk images
 # ---------------------------
+echo
 read -p "Download and install TOPS-20 disk images? " yn
 case $yn in
     [Yy]* ) 
@@ -171,53 +179,55 @@ case $yn in
 esac
 
 
-# ---------------------------
-# allow fall-back to old simulator
-# ---------------------------
-
-read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
-case $ynx in
-	[Yy]* ) 
-		echo Leaving things untouched
-		;;
-	[Nn]* ) 
-		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
-		case $yn in
-			[Pp]* ) 
-				echo copying pidp10.old to pidp10
-				cp /opt/pidp10/bin/pidp10.old /opt/pidp10/bin/pidp10
-				# make sure pidp10 simulator has the right privileges
-				# to access GPIO with root privileges:
-				sudo chmod +s /opt/pidp10/bin/pidp10
-				# to run a RT thread:
-				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
-				;;
-			[Cc]* ) 
-				echo copying pdp10-ka to pidp10
-				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10
-				# make sure pidp10 simulator has the right privileges
-				# to access GPIO with root privileges:
-				sudo chmod +s /opt/pidp10/bin/pidp10
-				# to run a RT thread:
-				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
-				;;
-			[Ll]* ) 
-				echo Leaving things untouched from how they were
-				;;
-			* ) 
-				echo "Please answer p,c, or in case of doubt, l."
-				;;
-		esac
-		;;
-	* ) 
-		echo "Please answer yes or no."
-		;;
-esac
+## ---------------------------
+## allow fall-back to old simulator
+## ---------------------------
+#
+#echo
+#read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
+#case $ynx in
+#	[Yy]* ) 
+#		echo Leaving things untouched
+#		;;
+#	[Nn]* ) 
+#		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
+#		case $yn in
+#			[Pp]* ) 
+#				echo copying pidp10.old to pidp10
+#				cp /opt/pidp10/bin/pidp10.old /opt/pidp10/bin/pidp10
+#				# make sure pidp10 simulator has the right privileges
+#				# to access GPIO with root privileges:
+#				sudo chmod +s /opt/pidp10/bin/pidp10
+#				# to run a RT thread:
+#				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
+#				;;
+#			[Cc]* ) 
+#				echo copying pdp10-ka to pidp10
+#				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10
+#				# make sure pidp10 simulator has the right privileges
+#				# to access GPIO with root privileges:
+#				sudo chmod +s /opt/pidp10/bin/pidp10
+#				# to run a RT thread:
+#				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
+#				;;
+#			[Ll]* ) 
+#				echo Leaving things untouched from how they were
+#				;;
+#			* ) 
+#				echo "Please answer p,c, or in case of doubt, l."
+#				;;
+#		esac
+#		;;
+#	* ) 
+#		echo "Please answer yes or no."
+#		;;
+#esac
 
 
 # ---------------------------
 # install source code of Richard Cornwell's PDP-10 emulators
 # ---------------------------
+echo
 read -p "Download Richard Cornwell's PDP-10 emulator source code? " yn
 case $yn in
     [Yy]* ) 
@@ -246,6 +256,7 @@ esac
 # ---------------------------
 # install Lars Brinkhoff's full ITS project
 # ---------------------------
+echo
 read -p "Download Lars Brinkhoff's ITS project source code? " yn
 case $yn in
     [Yy]* ) 
@@ -262,6 +273,10 @@ case $yn in
 esac
 
 
+# ---------------------------
+# install dependencies for compiling source code
+# ---------------------------
+echo
 read -p "Install add'l dependencies for compiling the source code? " yn
 case $yn in
     [Yy]* ) 
@@ -277,8 +292,8 @@ case $yn in
 	sudo apt install -y libvdeplug2
 	# addl from Lars' its/build/dependencies script
 	sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
-# for networking support in simh:
-        sudo apt-get install -y libpcap-dev
+	# for networking support in simh:
+	sudo apt-get install -y libpcap-dev
         sudo apt-get install -y libvdeplug-dev
         #Install readline, used for command-line editing in simh
         sudo apt-get install -y libreadline-dev
@@ -300,6 +315,7 @@ esac
 # ---------------------------
 # let raspi-config enable i2c, VNC, X11-not-Wayland?
 # ---------------------------
+echo
 read -p "Let raspi-config enable i2c, VNC? " yn
 case $yn in
     [Yy]* ) 
@@ -318,6 +334,7 @@ esac
 # ---------------------------
 # Start up the PDP-10 automatically when logging in?
 # ---------------------------
+echo
 append_to_file() {
 	# first, make backup copy of .bashrc...
         test ! -f $1.backup && cp -p $1 $1.backup
@@ -329,26 +346,110 @@ append_to_file() {
             sed -e "\$apdpcontrol start" -i $1
         fi
 }
+append_to_wayland() {
+	# first, make backup copy of .bashrc...
+        test ! -f $1.backup && cp -p $1 $1.backup
+        # add the line to wayfire.ini if not there yet
+        if grep -xq "pdpcontrol start" $1
+        then
+            echo wayfire.ini modification already done, OK.
+        else
+            sed -e "\$a\ \n\[autostart]\npidp = pdpcontrol start" -i $1
+	    echo wayfire.ini modified with autostart
+        fi
+}
 
-read -p "Automatically start the PiDP-10 core when logging in? " yn
-case $yn in
-    [Yy]* ) 
-	echo testing for .profile or otherwise, .bash_profile
-	if [ -f "$HOME/.profile" ]; then
-		echo .profile found
-		append_to_file "$HOME/.profile"
+# Wayland...of course has a problem doing things the old way, so...
+if [ ! -z "$WAYLAND_DISPLAY" ]; then
+	read -p "Automatically start the PiDP-10 core when logging in? " yn
+	echo "...running under Wayland, would modify wayfire.ini..."
+	case $yn in
+		[Yy]* ) 
+			echo "testing for wayfire.ini"
+			if [ -f "$HOME/.config/wayfire.ini" ]; then
 
-	elif [ -f "$HOME/.bash_profile" ]; then
-		echo .bash_profile found
-		append_to_file "$HOME/.bash_profile"
-	else
-		echo no .profile or .bash_profile found. Odd. Skipping autorun
-	fi
-        ;;
-    [Nn]* ) ;;
-        * ) echo "Please answer yes or no.";;
-esac
+				if grep -q "pdpcontrol start" "$HOME/.config/wayfire.ini" 
+				then
+					echo "...Autostart already in wayfire.ini"
+				else
+					append_to_wayland "$HOME/.config/wayfire.ini"
+					echo "...Autostart added to wayfire.ini"
+				fi
+			else
+				echo "...wayfire.ini not found. Odd. Skipping autorun"
+			fi
+			# also, check if pdpcontrol start was left from a previous install
+			# because up til 20240427 install always used .profile, even under Wayland.
+			# if so, remove it
+			if [ -f "$HOME/.profile" ]; then
+				if grep -xq "pdpcontrol start" "$HOME/.profile"
+				then
+					echo removing pdpcontrol from .profile
+					sed -i '/pdpcontrol start/d' "$HOME/.profile"
+					echo removed pdpcontrol from .profile
+				else
+					echo no need to change .profile, pdpcontrol not in it
+				fi
+			elif [ -f "$HOME/.bash_profile" ]; then
+				if grep -xq "pdpcontrol start" "$HOME/.bash_profile"
+				then
+					echo removing pdpcontrol from .bash_profile
+					sed -i '/pdpcontrol start/d' "$HOME/.bash_profile"
+					echo removed pdpcontrol from .bash_profile
+				else
+					echo no need to change .bash_profile, pdpcontrol not in it
+				fi
+			else
+				echo .profile or .bash_profile not found. Odd. 
+			fi
+			;;
+		[Nn]* ) ;;
+		* ) echo "Please answer yes or no.";;
+	esac
+#--- patch 20240501
+#--- problem: previous version checked for Wayland, then X11. But forgot that some people install headless
+#--- so this is removed:
+#in case running under X11:
+#elif [ ! -z "$DISPLAY" ]; then
+#--- and this installs autostart for both X11 and headless (or, for anything else than Wayland):
+else
+	read -p "Automatically start the PiDP-10 core when logging in? " yn
+	echo "not running Wayland, so modifying .profile or .bash_profile..."
+	echo
+	echo "-------------------------------------------------------------------------------"
+	echo "Please read this:"
+	echo "The Raspberry Pi GUI switched from X11 to Wayland."
+	echo "It seems that you are running the install script either under X11, or headless."
+	echo "Either way, in both those cases, the autostart is done by adding to ~/.profile."
+	echo "But if you later will use the default Pi GUI under Wayland,"
+        echo "the PDP-10 will start without the type340 display. "
+	echo "In which case: --> run this section of the install script again."
+	echo
+	echo "(negative comment on the manner in which Wayland breaks stuff removed)"
+	echo "-------------------------------------------------------------------------------"
+	echo
+	case $yn in
+		[Yy]* ) 
+			echo testing for .profile or otherwise, .bash_profile
+			if [ -f "$HOME/.profile" ]; then
+				echo .profile found
+				append_to_file "$HOME/.profile"
 
+			elif [ -f "$HOME/.bash_profile" ]; then
+				echo .bash_profile found
+				append_to_file "$HOME/.bash_profile"
+			else
+				echo no .profile or .bash_profile found. Odd. Skipping autorun
+			fi
+			;;
+		[Nn]* ) ;;
+		* ) echo "Please answer yes or no.";;
+	esac
+#--- patch 20240501 part 2
+#else
+#	echo "cannot find either Wayland or X11, autostarting PiDP-10 skipped"
+#---
+fi
 
 # ---------------------------
 # install Teletype font
@@ -377,7 +478,23 @@ case $yn in
 		# desktop files in Pi menu
 		cp /opt/pidp10/install/desktop-files/* ~/.local/share/applications/
 		# pdp view as icon on the desktop
-		cp /opt/pidp10/install/desktop-files/view* ~/Desktop/
+		cp /opt/pidp10/install/desktop-files/*.desktop ~/Desktop/
+		# let desktop icons run without annoying dialog box
+		
+		
+		if [ -f "$HOME/.config/libfm/libfm.conf" ]; then
+			sed -i 's/^quick_exec=.*/quick_exec=1/' ~/.config/libfm/libfm.conf
+		else
+			echo
+			echo "-----------------------------------------------------------------------"
+			echo "Note:"
+		        echo " Double-clicking desktop icons on the Pi GUI always asks you"
+			echo " 'if you want to execute this file'. To get rid of that annoyance"
+			echo " go to the file manager's preferences and set"
+			echo " Edit > Preferences > General > Don't ask options on launch executable"
+			echo "-----------------------------------------------------------------------"
+			echo
+		fi	
 		;;
 	[Nn]* ) ;;
 	* ) echo "Please answer yes or no.";;
@@ -387,18 +504,18 @@ esac
 # ---------------------------
 # reduce telnet unblock time
 # ---------------------------
-echo If you are not installing on a Pi, say No:
-read -p "Reduce telnet release time? " yn
-case $yn in
-	[Yy]* ) 
-		sudo sysctl -w net.ipv4.tcp_fin_timeout=1
-		;;
-	[Nn]* ) ;;
-	* ) echo "Please answer yes or no.";;
-esac
+#echo If you are not installing on a Pi, say No:
+#read -p "Reduce telnet release time? " yn
+#case $yn in
+#	[Yy]* ) 
+#		sudo sysctl -w net.ipv4.tcp_fin_timeout=1
+#		;;
+#	[Nn]* ) ;;
+#	* ) echo "Please answer yes or no.";;
+#esac
 
 
 echo
-echo Done.
+echo Done. Please reboot for all changes to take effect.
 echo
 

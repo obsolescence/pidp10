@@ -1,10 +1,9 @@
 [Desktop Entry]
 Name=Teletype (telcon)
-GenericName=PDP-10 Peripheral Manager
 Comment=MAnage PDP-10 peripherals
 Exec=nohup pdp telcon
 Terminal=true
 Type=Application
-Icon=/opt/pidp10/install/desktop-files/telcon.svg
+Icon=/opt/pidp10/install/icons/telcon.svg
 Categories=X-PDP10;
 StartupNotify=false

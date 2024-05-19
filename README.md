@@ -2,9 +2,6 @@
 
 # Github repository for the PiDP-10 project
 
-Work in progress, supporting the PiDP-10 replica. 
-<br>As of March 2024, this is in beta stage for the first 50 daring builders (thank you for helping in the beta phase). The code will change rapidly this month, then be out of beta in April.
-
 Main web sites:
 
 https://obsolescence.dev/pidp10 - Overview & context
@@ -42,12 +39,12 @@ This repository is really for the PiDP-10 - or a regular Raspberry Pi (4 or 5 re
 Explanation: there's lots of simulator programs next to the PDP-10 engine itself (they're all in /opt/pidp10/bin) to simulate various hooked-up hardware from the MIT AI lab. Some PDP-11s, a PDP-6, other computers, terminals, etc. 
 <br>This is the hardware farm that becomes your playground. Most of the simulator programs connect with each other through telnet links (even if the simulated machines think it's serial ports and other cabling, it is all telnet in truth).
 
-So not everything has to run on the PiDP-10 itself. It is quite normal to run the Knight TV terminal simulator on your laptop, logging in to the PiDP-10 remotely. You might even invite others for a  multiplayer Mazewar session, each connecting to the PiDP-10 from their own location.
+So not everything has to run on the PiDP-10 itself. It is quite normal to run the Knight TV terminal simulator on your laptop, logging in to the PiDP-10 remotely. You might even invite others for a  multiplayer Mazewar session, each connecting to the PiDP-10 from their own location. See https://github.com/obsolescence/rpdp for installing the terminal simulators on your laptop/desktop.
 
 Two control scripts regulate the PDP-10:
 
 - **pdpcontrol** \[start/stop/status\]
-> If you run this *without* PiDP-8 hardware, then you *must* do `pdpcontrol start 1` instead of `pdpcontrol start`. Because you don't have the front panel switches.
+> If you run this *without* PiDP-10 hardware, then you *must* do `pdpcontrol start 1` instead of `pdpcontrol start`. Because you don't have the front panel switches.
 > The relevant boot numbers: 0 = blinkenlights demo, 1 = boot ITS, 2 = boot TOPS-10.
 
 - **pdp**: if run without any command line arguments, inspect the simulation engine. Enter `CTRL-A` `d` to exit again.
@@ -61,7 +58,8 @@ The project will actually run just fine on a Linux laptop instead of a Pi. There
 
 ## 4. Using terminals on a Linux laptop to connect with the PiDP-10
 
-Install the project on your X86 Linux machine as per section 3 above. Then, edit the /opt/pip10/bin/pdp.sh script, and where it says 'localhost', change that to raspberrypi.local, or whatever name you gave the Pi. You might want to save the edited script a different name, pdp-remote.sh or somesuch. `./pdp-remote.sh tvcon` will then connect your Knight TV to the PiDP-10.
+Install https://github.com/obsolescence/rpdp on your X86 Linux machine (Windows 11 with WSL also works). After installing that, `rpdp tvcon` will  connect your Knight TV to the PiDP-10.
+Note: rpdp will work on raspberry Pi's as well.
 
 
 ## 5. Command & Control your hardware lab
@@ -92,8 +90,7 @@ See the two main project web sites mentioned at the top of the page to explore t
 <br><br>
 **Source code and hacking about**
 <br>Assuming you let the installer run though all its options, you will find nearly a dozen software projects (the PDP-10, the terminals, the hooked-up other computers from the AI Lab). Edit-compile-run, and install your enhanced binaries in /opt/pidp10 once you are satisfied. Note that almost all these tools are projects stored here as live git submodules.
-<br>`pidp10/src/panama5`: source code for a modified Richard Cornwell's PDP-10 simulator. Use make X86=1 if you do not have a PiDP-10 front panel, it will run fine. 
-	The Panama5 version is temporary, Richard wants to roll the front panel driver back into his original PDP-10/KA10 github at https://github.com/rcornwell/sims
+<br>`pidp10/src/pdp10`: source code for Richard Cornwell's PDP-10 simulator. Use make X86=1 if you do not have a PiDP-10 front panel, it will run fine. 
 <br>`pidp10/src/its`: the heart of the ITS beast. 
 <br>`pidp10/src/its/tools` you will find the peripheral projects.
 <br>`pidp10/src/sty`: a Teletype Model 33simulator with satisfying noises. But it is a quick hack, we had finish this in a hurry. Still, works fine.
