@@ -12263,7 +12263,7 @@ last:
         if (QITS)
             load_quantum();
 #endif
-	RUN = 0;
+        RUN = 0;
         return SCPE_STEP;
     }
 }
@@ -13868,6 +13868,7 @@ t_bool build_dev_tab (void)
                 if ((nia_dev.flags & DEV_DIS) == 0 && dptr != &nia_dev &&
                     rh20 == (((DIB *)nia_dev.ctxt)->dev_num & 0777))
                     rh20 += 4;
+                else
                 /* If NIA20, then assign it to it's requested address */
                 if ((nia_dev.flags & DEV_DIS) == 0 && dptr == &nia_dev)
                     d = dibp->dev_num & 0777;
@@ -13930,6 +13931,8 @@ if (cptr == NULL) {
     }
 #if KI
 lnt = (int32) get_uint (cptr, 10, 001777, &r);
+#elif KS
+lnt = (int32) get_uint (cptr, 10, 077777, &r);
 #else
 lnt = (int32) get_uint (cptr, 10, 007777, &r);
 #endif
