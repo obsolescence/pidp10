@@ -1354,7 +1354,6 @@ t_stat dev_apr(uint32 dev, uint64 *data) {
  * MTR device for KL10.
  */
 t_stat dev_mtr(uint32 dev, uint64 *data) {
-    uint64 res = 0;
 
     switch(dev & 03) {
     case CONI:
@@ -3523,6 +3522,7 @@ int Mem_read_its(int flag, int cur_context, int fetch, int mod) {
                 check_apr_irq();
                 return 1;
             }
+            return 0;
         }
 #endif
 #if NUM_DEVS_TEN11 > 0
@@ -3577,6 +3577,16 @@ int Mem_write_its(int flag, int cur_context) {
         }
         if (!page_lookup_its(AB, flag, &addr, 1, cur_context, 0, 0))
             return 1;
+#if NUM_DEVS_AUXCPU > 0
+        if (AUXCPURANGE(addr) && QAUXCPU) {
+            if (auxcpu_write (addr, MB)) {
+                nxm_flag = 1;
+                check_apr_irq();
+                return 1;
+            }
+            return 0;
+        }
+#endif
 #if NUM_DEVS_TEN11 > 0
         if (T11RANGE(addr) && QTEN11) {
             if (ten11_write (addr, MB)) {
@@ -3585,15 +3595,6 @@ int Mem_write_its(int flag, int cur_context) {
                 return 1;
             }
             return 0;
-        }
-#endif
-#if NUM_DEVS_AUXCPU > 0
-        if (AUXCPURANGE(addr) && QAUXCPU) {
-            if (auxcpu_write (addr, MB)) {
-                nxm_flag = 1;
-                check_apr_irq();
-                return 1;
-            }
         }
 #endif
         if (addr >= MEMSIZE) {
@@ -7186,9 +7187,6 @@ fnormx:
                       SC--;
                   } else {
                       AR = BR;
-#if KS
-                      FLAGS |= NODIV|TRP1;
-#endif
                       break;
                   }
               }
@@ -7247,10 +7245,8 @@ fnormx:
                       SC--;
                   }
                   AR &= FMASK;
-#if KL | KS
                   if ((SC & 01600) != 01600)
                       fxu_hold_set = 1;
-#endif
                   if (AR == (SMASK|EXPO)) {
                       AR = (AR >> 1) | (AR & SMASK);
                       SC ++;
@@ -11779,7 +11775,7 @@ fetch_opr:
                                   MB = BR;
                                   if (Mem_write(pi_cycle, 0))
                                       goto last;
-                                      MB = AR;
+                                  MB = AR;
                                   break;
                               }
                               break;
@@ -12267,7 +12263,7 @@ last:
         if (QITS)
             load_quantum();
 #endif
-	RUN = 0;
+        RUN = 0;
         return SCPE_STEP;
     }
 }
@@ -13872,6 +13868,7 @@ t_bool build_dev_tab (void)
                 if ((nia_dev.flags & DEV_DIS) == 0 && dptr != &nia_dev &&
                     rh20 == (((DIB *)nia_dev.ctxt)->dev_num & 0777))
                     rh20 += 4;
+                else
                 /* If NIA20, then assign it to it's requested address */
                 if ((nia_dev.flags & DEV_DIS) == 0 && dptr == &nia_dev)
                     d = dibp->dev_num & 0777;
@@ -13934,6 +13931,8 @@ if (cptr == NULL) {
     }
 #if KI
 lnt = (int32) get_uint (cptr, 10, 001777, &r);
+#elif KS
+lnt = (int32) get_uint (cptr, 10, 077777, &r);
 #else
 lnt = (int32) get_uint (cptr, 10, 007777, &r);
 #endif
