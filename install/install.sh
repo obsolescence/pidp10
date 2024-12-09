@@ -376,7 +376,14 @@ if [ ! -z "$WAYLAND_DISPLAY" ]; then
 					echo "...Autostart added to wayfire.ini"
 				fi
 			else
-				echo "...wayfire.ini not found. Odd. Skipping autorun"
+				#echo "...wayfire.ini not found. Odd. Skipping autorun"
+				echo "labwc under Wayland detected. Adding autostart"
+				mkdir -p ~/.config/labwc
+				touch ~/.config/labwc/autostart
+				if ! grep -q "pdpcontrol start" ~/.config/labwc/autostart; then
+					echo "pdpcontrol start" >> ~/.config/labwc/autostart
+				fi
+				echo "Added or modifies the labwc autostart file."
 			fi
 			# also, check if pdpcontrol start was left from a previous install
 			# because up til 20240427 install always used .profile, even under Wayland.
