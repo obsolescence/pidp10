@@ -341,7 +341,7 @@ void *blink(void *ptr)
     }
 
     /* Columns */
-    for (col = 0; col < 10; col++) {
+    for (col = 0; col < 18; col++) {
          gpio_set_fsel(cols[col], GPIO_FSEL_INPUT);
          gpio_set_pull(cols[col], PULL_UP);
     }
@@ -407,7 +407,7 @@ void *blink(void *ptr)
                     leds |= (pi_enable) ? PION_LAMP : 0;
                     leds |= (PIR & PI_REQ_MASK6) << PI_REQ_V_6;
                     leds |= (PIH & PI_PRO_MASK6) << PI_PRO_V_6;
-		    leds |= (MI_flag) ? PI_LAMP : MI_LAMP;
+                    leds |= (MI_flag) ? PI_LAMP : MI_LAMP;
                     break;
             }
 
