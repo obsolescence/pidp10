@@ -4,7 +4,7 @@
 
 Main web sites:
 
-https://obsolescence.dev/pidp10 - Overview & context
+https://obsolescence.dev/pdp10 - Overview & context
 
 https://obsolescence.wixsite.com/obsolescence/pidp10 - Details on how to build & use
 

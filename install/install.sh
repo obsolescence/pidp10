@@ -179,51 +179,6 @@ case $yn in
 esac
 
 
-## ---------------------------
-## allow fall-back to old simulator
-## ---------------------------
-#
-#echo
-#read -p "Use currently installed PDP-10 simulator (yes makes sense)? " ynx
-#case $ynx in
-#	[Yy]* ) 
-#		echo Leaving things untouched
-#		;;
-#	[Nn]* ) 
-#		read -p "Install (p)revious or (c)urrent PDP-10 simulator, or (l)eave as-is? " yn
-#		case $yn in
-#			[Pp]* ) 
-#				echo copying pidp10.old to pidp10
-#				cp /opt/pidp10/bin/pidp10.old /opt/pidp10/bin/pidp10
-#				# make sure pidp10 simulator has the right privileges
-#				# to access GPIO with root privileges:
-#				sudo chmod +s /opt/pidp10/bin/pidp10
-#				# to run a RT thread:
-#				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
-#				;;
-#			[Cc]* ) 
-#				echo copying pdp10-ka to pidp10
-#				cp /opt/pidp10/bin/pdp10-ka /opt/pidp10/bin/pidp10
-#				# make sure pidp10 simulator has the right privileges
-#				# to access GPIO with root privileges:
-#				sudo chmod +s /opt/pidp10/bin/pidp10
-#				# to run a RT thread:
-#				sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
-#				;;
-#			[Ll]* ) 
-#				echo Leaving things untouched from how they were
-#				;;
-#			* ) 
-#				echo "Please answer p,c, or in case of doubt, l."
-#				;;
-#		esac
-#		;;
-#	* ) 
-#		echo "Please answer yes or no."
-#		;;
-#esac
-
-
 # ---------------------------
 # install source code of Richard Cornwell's PDP-10 emulators
 # ---------------------------
@@ -249,8 +204,6 @@ case $yn in
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
 esac
-
-
 
 
 # ---------------------------
@@ -336,127 +289,89 @@ esac
 # ---------------------------
 echo
 append_to_file() {
-	# first, make backup copy of .bashrc...
+	# first, make backup copy
         test ! -f $1.backup && cp -p $1 $1.backup
         # add the line to profile if not there yet
-        if grep -xq "pdpcontrol start" $1
+        if grep -xq "/opt/pidp10/bin/autostart.sh" $1
         then
             echo profile modification already done, OK.
         else
-            sed -e "\$apdpcontrol start" -i $1
-        fi
-}
-append_to_wayland() {
-	# first, make backup copy of .bashrc...
-        test ! -f $1.backup && cp -p $1 $1.backup
-        # add the line to wayfire.ini if not there yet
-        if grep -xq "pdpcontrol start" $1
-        then
-            echo wayfire.ini modification already done, OK.
-        else
-            sed -e "\$a\ \n\[autostart]\npidp = pdpcontrol start" -i $1
-	    echo wayfire.ini modified with autostart
+            sed -e "\$a\/opt\/pidp10\/bin\/autostart.sh" -i $1
         fi
 }
 
-# Wayland...of course has a problem doing things the old way, so...
-if [ ! -z "$WAYLAND_DISPLAY" ]; then
-	read -p "Automatically start the PiDP-10 core when logging in? " yn
-	echo "...running under Wayland, would modify wayfire.ini..."
-	case $yn in
-		[Yy]* ) 
-			echo "testing for wayfire.ini"
-			if [ -f "$HOME/.config/wayfire.ini" ]; then
+read -p "Automatically start the PiDP-10 core when logging in? " yn
+case $yn in
+    [Yy]* ) 
+	# first, check if the old pdpcontrol start was left in from a previous install
+	# because up til 20250303 install did something else in .profile, might be still there.
+	# if so, remove it
+	if [ -f "$HOME/.profile" ]; then
+		if grep -xq "pdpcontrol start" "$HOME/.profile"
+		then
+			echo removing old autostart from .profile
+			sed -i '/pdpcontrol start/d' "$HOME/.profile"
+			echo removed pdpcontrol from .profile
+		else
+			echo no need to remove old autostart from .profile, not in it
+		fi
+	elif [ -f "$HOME/.bash_profile" ]; then
+		if grep -xq "pdpcontrol start" "$HOME/.bash_profile"
+		then
+			echo removing pdpcontrol from .bash_profile
+			sed -i '/pdpcontrol start/d' "$HOME/.bash_profile"
+			echo removed old autostart from .bash_profile
+		else
+			echo no need to remove old autostart from .bash_profile, pdpcontrol not in it
+		fi
+	else
+		echo .profile or .bash_profile not found. Odd.
+	fi
 
-				if grep -q "pdpcontrol start" "$HOME/.config/wayfire.ini" 
-				then
-					echo "...Autostart already in wayfire.ini"
-				else
-					append_to_wayland "$HOME/.config/wayfire.ini"
-					echo "...Autostart added to wayfire.ini"
-				fi
-			else
-				#echo "...wayfire.ini not found. Odd. Skipping autorun"
-				echo "labwc under Wayland detected. Adding autostart"
-				mkdir -p ~/.config/labwc
-				touch ~/.config/labwc/autostart
-				if ! grep -q "pdpcontrol start" ~/.config/labwc/autostart; then
-					echo "pdpcontrol start" >> ~/.config/labwc/autostart
-				fi
-				echo "Added or modifies the labwc autostart file."
-			fi
-			# also, check if pdpcontrol start was left from a previous install
-			# because up til 20240427 install always used .profile, even under Wayland.
-			# if so, remove it
-			if [ -f "$HOME/.profile" ]; then
-				if grep -xq "pdpcontrol start" "$HOME/.profile"
-				then
-					echo removing pdpcontrol from .profile
-					sed -i '/pdpcontrol start/d' "$HOME/.profile"
-					echo removed pdpcontrol from .profile
-				else
-					echo no need to change .profile, pdpcontrol not in it
-				fi
-			elif [ -f "$HOME/.bash_profile" ]; then
-				if grep -xq "pdpcontrol start" "$HOME/.bash_profile"
-				then
-					echo removing pdpcontrol from .bash_profile
-					sed -i '/pdpcontrol start/d' "$HOME/.bash_profile"
-					echo removed pdpcontrol from .bash_profile
-				else
-					echo no need to change .bash_profile, pdpcontrol not in it
-				fi
-			else
-				echo .profile or .bash_profile not found. Odd. 
-			fi
-			;;
-		[Nn]* ) ;;
-		* ) echo "Please answer yes or no.";;
-	esac
-#--- patch 20240501
-#--- problem: previous version checked for Wayland, then X11. But forgot that some people install headless
-#--- so this is removed:
-#in case running under X11:
-#elif [ ! -z "$DISPLAY" ]; then
-#--- and this installs autostart for both X11 and headless (or, for anything else than Wayland):
-else
-	read -p "Automatically start the PiDP-10 core when logging in? " yn
-	echo "not running Wayland, so modifying .profile or .bash_profile..."
-	echo
-	echo "-------------------------------------------------------------------------------"
-	echo "Please read this:"
-	echo "The Raspberry Pi GUI switched from X11 to Wayland."
-	echo "It seems that you are running the install script either under X11, or headless."
-	echo "Either way, in both those cases, the autostart is done by adding to ~/.profile."
-	echo "But if you later will use the default Pi GUI under Wayland,"
-        echo "the PDP-10 will start without the type340 display. "
-	echo "In which case: --> run this section of the install script again."
-	echo
-	echo "(negative comment on the manner in which Wayland breaks stuff removed)"
-	echo "-------------------------------------------------------------------------------"
-	echo
-	case $yn in
-		[Yy]* ) 
-			echo testing for .profile or otherwise, .bash_profile
-			if [ -f "$HOME/.profile" ]; then
-				echo .profile found
-				append_to_file "$HOME/.profile"
+	# remove any autostart from wayfire.ini or labwc-autostart, because we dont need that anymore
+	# (wayland is such a shifting blob of incompatibilities, 3rd time we need to deal with changes in 7 months...)
+	
+	if [ -f "$HOME/.config/wayfire.ini" ]; then
+		if grep -q "pdpcontrol start" "$HOME/.config/wayfire.ini" 
+		then
+			echo "...old style Autostart in wayfire.ini, removing"
+			sed -i '/pdpcontrol start/d' "$HOME/.config/wayfire.ini"
+		fi
+	fi
 
-			elif [ -f "$HOME/.bash_profile" ]; then
-				echo .bash_profile found
-				append_to_file "$HOME/.bash_profile"
-			else
-				echo no .profile or .bash_profile found. Odd. Skipping autorun
-			fi
-			;;
-		[Nn]* ) ;;
-		* ) echo "Please answer yes or no.";;
-	esac
-#--- patch 20240501 part 2
-#else
-#	echo "cannot find either Wayland or X11, autostarting PiDP-10 skipped"
-#---
-fi
+	if [ -f "$HOME/.config/labwc/autostart" ]; then
+		echo labwc-autostart file exists...
+		if grep -q "pdpcontrol start" "$HOME/.config/labwc/autostart"
+		then
+			echo "...old style Autostart in labwc-autostart, removing"
+			sed -i '/pdpcontrol start/d' "$HOME/.config/labwc/autostart"
+		fi
+	fi
+	echo
+
+	#--- patch 20250303
+	#--- problem: The Pi People broke their wayland config YET AGAIN. The issue: Xwayland is not yet running
+	#--- when you autostart a program (whatever way you try). The trick is to run xrandr, that will bring up Xwayland.
+	#--- I wish they'd not break things so often with Wayland...
+	echo testing for .profile or otherwise, .bash_profile
+	if [ -f "$HOME/.profile" ]; then
+		echo .profile found
+		append_to_file "$HOME/.profile"
+
+	elif [ -f "$HOME/.bash_profile" ]; then
+			echo .bash_profile found
+			append_to_file "$HOME/.bash_profile"
+	else
+		echo no .profile or .bash_profile found. Odd. Skipping autorun
+		echo You will have to start the PDP-10 manually, typing pdpcontrol start.
+	fi
+	echo -- autostart done.
+	;;
+	[Nn]* ) ;;
+	* ) echo "Please answer yes or no.";;
+esac
+	echo -- -- autostart done.
+
 
 # ---------------------------
 # install Teletype font
