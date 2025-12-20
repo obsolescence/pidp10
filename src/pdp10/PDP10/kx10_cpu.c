@@ -778,6 +778,14 @@ DEVICE cpu_dev = {
 #else
 #define QSLAVE          0
 #endif
+#if PIDP10
+                        /* Update MI register if address matches */
+#define UPDATE_MI(a)    if (!MI_flag && a == AS) { \
+	                     MI = MB; \
+                        }
+#else
+#define UPDATE_MI(a)
+#endif
 #define MAX_DEV 128
 
 #if KL
@@ -1354,7 +1362,6 @@ t_stat dev_apr(uint32 dev, uint64 *data) {
  * MTR device for KL10.
  */
 t_stat dev_mtr(uint32 dev, uint64 *data) {
-    uint64 res = 0;
 
     switch(dev & 03) {
     case CONI:
@@ -2281,6 +2288,7 @@ int Mem_read(int flag, int cur_context, int fetch, int mod) {
         }
         /* Check if invalid section */
         MB = get_reg(AB);
+        UPDATE_MI(AB);
     } else {
         if (!page_lookup(AB, flag, &addr, mod, cur_context, fetch))
             return 1;
@@ -2295,6 +2303,7 @@ int Mem_read(int flag, int cur_context, int fetch, int mod) {
         MB = M[addr];
         modify = mod;
         last_addr = addr;
+        UPDATE_MI(addr);
     }
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
@@ -2316,11 +2325,13 @@ int Mem_write(int flag, int cur_context) {
             }
         }
         set_reg(AB, MB);
+        UPDATE_MI(AB);
     } else {
         if (modify) {
             if (sim_brk_summ && sim_brk_test(last_addr, SWMASK('W')))
                 watch_stop = 1;
             M[last_addr] = MB;
+	        UPDATE_MI(last_addr);
             modify = 0;
             return 0;
         }
@@ -2336,6 +2347,7 @@ int Mem_write(int flag, int cur_context) {
             watch_stop = 1;
         sim_interval--;
         M[addr] = MB;
+        UPDATE_MI(addr);
     }
     return 0;
 }
@@ -2825,6 +2837,7 @@ int Mem_read(int flag, int cur_context, int fetch, int mod) {
             return 1;
         }
         MB = get_reg(AB);
+        UPDATE_MI(AB);
     } else {
         if (!page_lookup(AB, flag, &addr, mod, cur_context, fetch))
             return 1;
@@ -2838,6 +2851,7 @@ int Mem_read(int flag, int cur_context, int fetch, int mod) {
         MB = M[addr];
         modify = mod;
         last_addr = addr;
+        UPDATE_MI(addr);
     }
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
@@ -2868,11 +2882,13 @@ int Mem_write(int flag, int cur_context) {
             return 0;
         }
         set_reg(AB, MB);
+        UPDATE_MI(AB);
     } else {
         if (modify) {
             if (sim_brk_summ && sim_brk_test(last_addr, SWMASK('W')))
                 watch_stop = 1;
             M[last_addr] = MB;
+            UPDATE_MI(last_addr);
             modify = 0;
             return 0;
         }
@@ -2886,6 +2902,7 @@ int Mem_write(int flag, int cur_context) {
             watch_stop = 1;
         sim_interval--;
         M[addr] = MB;
+        UPDATE_MI(addr);
     }
     return 0;
 }
@@ -3000,6 +3017,7 @@ int Mem_read_byte(int n, uint16 *data, int byte) {
            need -= 8;
         if (need >= 0)
            *data |= val << need;
+        UPDATE_MI(addr);
     }
     return s;
 }
@@ -3043,6 +3061,7 @@ int Mem_write_byte(int n, uint16 *data) {
         val |= msk & (((uint64)(dat >> (need - s))) << p);
         M[addr] = val;
         need -= s;
+        UPDATE_MI(addr);
     }
     return s;
 }
@@ -3249,6 +3268,7 @@ int Mem_read(int flag, int cur_context, int fetch, int mod) {
                 if (fetch == 0 && hst_lnt) {
                     hst[hst_p].mb = MB;
                 }
+                MB = get_reg(AB);
                 return 0;
             }
         }
@@ -3272,6 +3292,7 @@ read:
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
     }
+    UPDATE_MI(AB);
     return 0;
 }
 
@@ -3298,11 +3319,13 @@ int Mem_write(int flag, int cur_context) {
             }
         }
         set_reg(AB, MB);
+        UPDATE_MI(AB);
     } else {
         if (modify) {
             if (sim_brk_summ && sim_brk_test(last_addr, SWMASK('W')))
                 watch_stop = 1;
             M[last_addr] = MB;
+            UPDATE_MI(last_addr);
             modify = 0;
             return 0;
         }
@@ -3318,6 +3341,7 @@ write:
             watch_stop = 1;
          sim_interval--;
         M[addr] = MB;
+        UPDATE_MI(addr);
     }
     return 0;
 }
@@ -3513,6 +3537,7 @@ int Mem_read_its(int flag, int cur_context, int fetch, int mod) {
            return 0;
         }
         MB = get_reg(AB);
+        UPDATE_MI(AB);
     } else {
         if (!page_lookup_its(AB, flag, &addr, 0, cur_context, fetch, mod))
             return 1;
@@ -3523,6 +3548,7 @@ int Mem_read_its(int flag, int cur_context, int fetch, int mod) {
                 check_apr_irq();
                 return 1;
             }
+            return 0;
         }
 #endif
 #if NUM_DEVS_TEN11 > 0
@@ -3546,6 +3572,7 @@ int Mem_read_its(int flag, int cur_context, int fetch, int mod) {
         MB = M[addr];
         last_addr = addr;
         modify = mod;
+        UPDATE_MI(addr);
     }
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
@@ -3564,19 +3591,33 @@ int Mem_write_its(int flag, int cur_context) {
     if (AB < 020) {
         if ((xct_flag & 2) != 0 && !cur_context) {
             M[(ac_stack & 01777777) + AB] = MB;
+            UPDATE_MI((ac_stack & 01777777) + AB);
             return 0;
         }
         set_reg(AB, MB);
+        UPDATE_MI(AB);
     } else {
         if (modify) {
             if (sim_brk_summ && sim_brk_test(last_addr, SWMASK('W')))
                 watch_stop = 1;
             M[last_addr] = MB;
+            UPDATE_MI(last_addr);
             modify = 0;
             return 0;
         }
         if (!page_lookup_its(AB, flag, &addr, 1, cur_context, 0, 0))
             return 1;
+        UPDATE_MI(addr);
+#if NUM_DEVS_AUXCPU > 0
+        if (AUXCPURANGE(addr) && QAUXCPU) {
+            if (auxcpu_write (addr, MB)) {
+                nxm_flag = 1;
+                check_apr_irq();
+                return 1;
+            }
+            return 0;
+        }
+#endif
 #if NUM_DEVS_TEN11 > 0
         if (T11RANGE(addr) && QTEN11) {
             if (ten11_write (addr, MB)) {
@@ -3585,15 +3626,6 @@ int Mem_write_its(int flag, int cur_context) {
                 return 1;
             }
             return 0;
-        }
-#endif
-#if NUM_DEVS_AUXCPU > 0
-        if (AUXCPURANGE(addr) && QAUXCPU) {
-            if (auxcpu_write (addr, MB)) {
-                nxm_flag = 1;
-                check_apr_irq();
-                return 1;
-            }
         }
 #endif
         if (addr >= MEMSIZE) {
@@ -3605,6 +3637,7 @@ int Mem_write_its(int flag, int cur_context) {
             watch_stop = 1;
         sim_interval--;
         M[addr] = MB;
+        UPDATE_MI(addr);
     }
     return 0;
 }
@@ -3880,6 +3913,7 @@ int Mem_read_bbn(int flag, int cur_context, int fetch, int mod) {
         if (fetch == 0 && hst_lnt) {
             hst[hst_p].mb = MB;
         }
+        UPDATE_MI(AB);
         return 0;
     }
     if (!page_lookup_bbn(AB, flag, &addr, mod, cur_context, fetch))
@@ -3889,6 +3923,7 @@ int Mem_read_bbn(int flag, int cur_context, int fetch, int mod) {
         if (fetch == 0 && hst_lnt) {
             hst[hst_p].mb = MB;
         }
+        UPDATE_MI(AB);
         return 0;
     }
     if (addr >= MEMSIZE) {
@@ -3905,6 +3940,7 @@ int Mem_read_bbn(int flag, int cur_context, int fetch, int mod) {
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
     }
+    UPDATE_MI(addr);
     return 0;
 }
 
@@ -3919,12 +3955,14 @@ int Mem_write_bbn(int flag, int cur_context) {
     /* If not doing any special access, just access register */
     if (AB < 020 && ((xct_flag == 0 || cur_context || (FLAGS & USER) != 0))) {
         set_reg(AB, MB);
+        UPDATE_MI(AB);
         return 0;
     }
     if (modify) {
         if (sim_brk_summ && sim_brk_test(last_addr, SWMASK('W')))
             watch_stop = 1;
         M[last_addr] = MB;
+        UPDATE_MI(AB);
         modify = 0;
         return 0;
     }
@@ -3932,6 +3970,7 @@ int Mem_write_bbn(int flag, int cur_context) {
         return 1;
     if (addr < 020) {
         set_reg(AB, MB);
+        UPDATE_MI(AB);
         return 0;
     }
     if (addr >= MEMSIZE) {
@@ -3943,6 +3982,7 @@ int Mem_write_bbn(int flag, int cur_context) {
         watch_stop = 1;
     sim_interval--;
     M[addr] = MB;
+    UPDATE_MI(addr);
     return 0;
 }
 #endif
@@ -3997,6 +4037,7 @@ int Mem_read_waits(int flag, int cur_context, int fetch, int mod) {
         if (fetch == 0 && hst_lnt) {
             hst[hst_p].mb = MB;
         }
+        UPDATE_MI(addr);
         return 0;
     }
     if (!page_lookup_waits(AB, flag, &addr, mod, cur_context, fetch))
@@ -4015,6 +4056,7 @@ int Mem_read_waits(int flag, int cur_context, int fetch, int mod) {
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
     }
+    UPDATE_MI(addr);
     return 0;
 }
 
@@ -4030,6 +4072,7 @@ int Mem_write_waits(int flag, int cur_context) {
     /* If not doing any special access, just access register */
     if (AB < 020 && ((xct_flag == 0 || cur_context || (FLAGS & USER) != 0))) {
         set_reg(AB, MB);
+        UPDATE_MI(AB);
         return 0;
     }
     if (modify) {
@@ -4037,6 +4080,7 @@ int Mem_write_waits(int flag, int cur_context) {
             watch_stop = 1;
         M[last_addr] = MB;
         modify = 0;
+        UPDATE_MI(AB);
         return 0;
     }
     if (!page_lookup_waits(AB, flag, &addr, 1, cur_context, 0))
@@ -4050,6 +4094,7 @@ int Mem_write_waits(int flag, int cur_context) {
         watch_stop = 1;
     sim_interval--;
     M[addr] = MB;
+    UPDATE_MI(addr);
     return 0;
 }
 #endif
@@ -4080,7 +4125,7 @@ int page_lookup_ka(t_addr addr, int flag, t_addr *loc, int wr, int cur_context, 
 }
 
 int Mem_read_ka(int flag, int cur_context, int fetch, int mod) {
-    t_addr addr;
+    t_addr addr = AB;
 
     if (AB < 020) {
         MB = get_reg(AB);
@@ -4100,6 +4145,7 @@ int Mem_read_ka(int flag, int cur_context, int fetch, int mod) {
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
     }
+    UPDATE_MI(addr);
     return 0;
 }
 
@@ -4110,7 +4156,7 @@ int Mem_read_ka(int flag, int cur_context, int fetch, int mod) {
  */
 
 int Mem_write_ka(int flag, int cur_context) {
-    t_addr addr;
+    t_addr addr = AB;
 
     if (AB < 020) {
         set_reg(AB, MB);
@@ -4127,6 +4173,7 @@ int Mem_write_ka(int flag, int cur_context) {
         sim_interval--;
         M[addr] = MB;
     }
+    UPDATE_MI(addr);
     return 0;
 }
 
@@ -4250,7 +4297,7 @@ int page_lookup(t_addr addr, int flag, t_addr *loc, int wr, int cur_context, int
 }
 
 int Mem_read(int flag, int cur_context, int fetch, int mod) {
-    t_addr addr;
+    t_addr addr = AB;
 
     sim_interval--;
     if (AB < 020) {
@@ -4270,6 +4317,7 @@ int Mem_read(int flag, int cur_context, int fetch, int mod) {
     if (fetch == 0 && hst_lnt) {
         hst[hst_p].mb = MB;
     }
+    UPDATE_MI(addr);
     return 0;
 }
 
@@ -4280,7 +4328,7 @@ int Mem_read(int flag, int cur_context, int fetch, int mod) {
  */
 
 int Mem_write(int flag, int cur_context) {
-    t_addr addr;
+    t_addr addr = AB;
 
     sim_interval--;
     if (AB < 020) {
@@ -4297,6 +4345,7 @@ int Mem_write(int flag, int cur_context) {
             watch_stop = 1;
         M[addr] = MB;
     }
+    UPDATE_MI(addr);
     return 0;
 }
 #endif
@@ -4322,6 +4371,7 @@ int Mem_read_nopage() {
     }
     sim_interval--;
     MB = M[AB];
+    UPDATE_MI(AB);
     return 0;
 }
 
@@ -4346,6 +4396,7 @@ int Mem_write_nopage() {
     }
     sim_interval--;
     M[AB] = MB;
+    UPDATE_MI(AB);
     return 0;
 }
 
@@ -4908,7 +4959,7 @@ st_pi:
 #if PIDP10
     if (xct_sw) {    /* Handle Front panel xct switch */
         xct_sw = 0;
-    } else 
+    } else
 #endif
     f_pc_inh = 0;
 #if KL | KS
@@ -7186,9 +7237,6 @@ fnormx:
                       SC--;
                   } else {
                       AR = BR;
-#if KS
-                      FLAGS |= NODIV|TRP1;
-#endif
                       break;
                   }
               }
@@ -7247,10 +7295,8 @@ fnormx:
                       SC--;
                   }
                   AR &= FMASK;
-#if KL | KS
                   if ((SC & 01600) != 01600)
                       fxu_hold_set = 1;
-#endif
                   if (AR == (SMASK|EXPO)) {
                       AR = (AR >> 1) | (AR & SMASK);
                       SC ++;
@@ -11779,7 +11825,7 @@ fetch_opr:
                                   MB = BR;
                                   if (Mem_write(pi_cycle, 0))
                                       goto last;
-                                      MB = AR;
+                                  MB = AR;
                                   break;
                               }
                               break;
@@ -12267,7 +12313,7 @@ last:
         if (QITS)
             load_quantum();
 #endif
-	RUN = 0;
+        RUN = 0;
         return SCPE_STEP;
     }
 }
@@ -13872,6 +13918,7 @@ t_bool build_dev_tab (void)
                 if ((nia_dev.flags & DEV_DIS) == 0 && dptr != &nia_dev &&
                     rh20 == (((DIB *)nia_dev.ctxt)->dev_num & 0777))
                     rh20 += 4;
+                else
                 /* If NIA20, then assign it to it's requested address */
                 if ((nia_dev.flags & DEV_DIS) == 0 && dptr == &nia_dev)
                     d = dibp->dev_num & 0777;
@@ -13934,6 +13981,8 @@ if (cptr == NULL) {
     }
 #if KI
 lnt = (int32) get_uint (cptr, 10, 001777, &r);
+#elif KS
+lnt = (int32) get_uint (cptr, 10, 077777, &r);
 #else
 lnt = (int32) get_uint (cptr, 10, 007777, &r);
 #endif

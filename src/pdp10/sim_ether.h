@@ -31,12 +31,12 @@
   01-Mar-12  AGN  Cygwin doesn't have non-blocking pcap I/O pcap (it uses WinPcap)
   17-Nov-11  MP   Added dynamic loading of libpcap on *nix platforms
   30-Oct-11  MP   Added support for vde (Virtual Distributed Ethernet) networking
-  18-Apr-11  MP   Fixed race condition with self loopback packets in 
+  18-Apr-11  MP   Fixed race condition with self loopback packets in
                   multithreaded environments
   09-Dec-10  MP   Added support to determine if network address conflicts exist
   07-Dec-10  MP   Reworked DECnet self detection to the more general approach
                   of loopback self when any Physical Address is being set.
-  04-Dec-10  MP   Changed eth_write to do nonblocking writes when 
+  04-Dec-10  MP   Changed eth_write to do nonblocking writes when
                   USE_READER_THREAD is defined.
   07-Feb-08  MP   Added eth_show_dev to display ethernet state
   28-Jan-08  MP   Added eth_set_async
@@ -52,7 +52,7 @@
   14-Nov-03  DTH  Added #ifdef DECNET_FIX for problematic duplicate detection code
   07-Jun-03  MP   Added WIN32 support for DECNET duplicate address detection.
   05-Jun-03  DTH  Added used to struct eth_packet
-  01-Feb-03  MP   Changed some uint8 strings to char* to reflect usage 
+  01-Feb-03  MP   Changed some uint8 strings to char* to reflect usage
   22-Oct-02  DTH  Added all_multicast and promiscuous support
   21-Oct-02  DTH  Corrected copyright again
   16-Oct-02  DTH  Fixed copyright
@@ -82,7 +82,7 @@ extern "C" {
 #define USE_SETNONBLOCK 1
 #endif
 
-/* cygwin dowsn't have the right features to use the threaded network I/O */
+/* cygwin doesn't have the right features to use the threaded network I/O */
 #if defined(__CYGWIN__) || defined(__ZAURUS__) // psco added check for Zaurus platform
 #define DONT_USE_READER_THREAD
 #endif
@@ -135,9 +135,9 @@ extern "C" {
 #endif
 
 /*
-  USE_BPF is defined to let this code leverage the libpcap/OS kernel provided 
-  BPF packet filtering.  This generally will enhance performance.  It may not 
-  be available in some environments and/or it may not work correctly, so 
+  USE_BPF is defined to let this code leverage the libpcap/OS kernel provided
+  BPF packet filtering.  This generally will enhance performance.  It may not
+  be available in some environments and/or it may not work correctly, so
   undefining this will still provide working code here.
 */
 #if defined(HAVE_PCAP_NETWORK)
@@ -335,27 +335,27 @@ t_stat eth_open   (ETH_DEV* dev, const char* name,      /* open ethernet interfa
                    DEVICE* dptr, uint32 dbit);
 t_stat eth_close  (ETH_DEV* dev);                       /* close ethernet interface */
 t_stat eth_attach_help(FILE *st, DEVICE *dptr, UNIT *uptr, int32 flag, const char *cptr);
-t_stat eth_write  (ETH_DEV* dev, ETH_PACK* packet,      /* write sychronous packet; */
+t_stat eth_write  (ETH_DEV* dev, ETH_PACK* packet,      /* write synchronous packet; */
                    ETH_PCALLBACK routine);              /*  callback when done */
 int eth_read      (ETH_DEV* dev, ETH_PACK* packet,      /* read single packet; */
                    ETH_PCALLBACK routine);              /*  callback when done*/
 t_stat eth_filter (ETH_DEV* dev, int addr_count,        /* set filter on incoming packets */
-                   ETH_MAC* const addresses,
+                   const ETH_MAC addresses[],
                    ETH_BOOL all_multicast,
                    ETH_BOOL promiscuous);
 t_stat eth_filter_hash (ETH_DEV* dev, int addr_count,   /* set filter on incoming packets with hash */
-                        ETH_MAC* const addresses,
+                        const ETH_MAC addresses[],
                         ETH_BOOL all_multicast,
                         ETH_BOOL promiscuous,
                         ETH_MULTIHASH* const hash);     /* AUTODIN II based 8 byte imperfect hash */
 t_stat eth_filter_hash_ex (ETH_DEV* dev, int addr_count,/* set filter on incoming packets with hash */
-                           ETH_MAC* const addresses,
+                           const ETH_MAC addresses[],
                            ETH_BOOL all_multicast,
                            ETH_BOOL promiscuous,
                            ETH_BOOL match_broadcast,
                            ETH_MULTIHASH* const hash);  /* AUTODIN II based 8 byte imperfect hash */
-t_stat eth_check_address_conflict (ETH_DEV* dev, 
-                                   ETH_MAC* const address);
+t_stat eth_check_address_conflict (ETH_DEV* dev,
+                                   const ETH_MAC address);
 const char *eth_version (void);                         /* Version of dynamically loaded library (pcap) */
 void eth_setcrc   (ETH_DEV* dev, int need_crc);         /* enable/disable CRC mode */
 t_stat eth_set_async (ETH_DEV* dev, int latency);       /* set read behavior to be async */
@@ -372,9 +372,9 @@ t_stat eth_show_devices (FILE* st, DEVICE *dptr,        /* show ethernet devices
 int eth_devices (int max, ETH_LIST* dev, ETH_BOOL framers); /* get ethernet devices on host */
 void eth_show_dev (FILE*st, ETH_DEV* dev);              /* show ethernet device state */
 
-void eth_mac_fmt (ETH_MAC* const add, char* buffer);    /* format ethernet mac address */
-t_stat eth_mac_scan (ETH_MAC* mac, const char* strmac); /* scan string for mac, put in mac */
-t_stat eth_mac_scan_ex (ETH_MAC* mac,                   /* scan string for mac, put in mac */
+void eth_mac_fmt (const ETH_MAC add, char* buffer);     /* format ethernet mac address */
+t_stat eth_mac_scan (ETH_MAC mac, const char* strmac);  /* scan string for mac, put in mac */
+t_stat eth_mac_scan_ex (ETH_MAC mac,                    /* scan string for mac, put in mac */
                         const char* strmac, UNIT *uptr);/* for specified unit */
 
 t_stat ethq_init (ETH_QUE* que, int max);               /* initialize FIFO queue */
@@ -383,11 +383,49 @@ void ethq_remove (ETH_QUE* que);                        /* remove item from FIFO
 void ethq_insert (ETH_QUE* que, int32 type,             /* insert item into FIFO queue */
                   ETH_PACK* packet, int32 status);
 void ethq_insert_data(ETH_QUE* que, int32 type,         /* insert item into FIFO queue */
-                  const uint8 *data, int used, size_t len, 
+                  const uint8 *data, int used, size_t len,
                   size_t crc_len, const uint8 *crc_data, int32 status);
 t_stat ethq_destroy(ETH_QUE* que);                      /* release FIFO queue */
 const char *eth_capabilities(void);
 t_stat sim_ether_test (DEVICE *dptr, const char *cptr); /* unit test routine */
+
+/* Well-known Ethernet MAC addresses:
+ *
+ * eth_mac_any: All zeroes/any address
+ * eth_mac_bcast: All ones broadcast.
+ */
+extern const ETH_MAC eth_mac_any;
+extern const ETH_MAC eth_mac_bcast;
+
+/* Type-enforcing MAC address copy function.
+ *
+ * This inline helps to prevent the following situation:
+ * 
+ *   void network_func(DEVICE *dev, ETH_MAC *mac)
+ *   {
+ *     ETH_MAC other_mac;
+ * 
+ *     ...
+ *     memcpy(other_mac, mac, sizeof(ETH_MAC));
+ *   }
+ * 
+ * The compiler will happily accept the memcpy() as valid because src and dst are
+ * converted to "void *". This is a subtle bug -- mac is a pointer to an ETH_MAC
+ * and memcpy will copy from somewhere other than the first byte of the source MAC
+ * address.
+ */
+static inline void eth_copy_mac(ETH_MAC dst, const ETH_MAC src)
+{
+  memcpy(dst, src, sizeof(ETH_MAC));
+}
+
+/* Type-enforcing MAC comparison function. Helps to avoid subtle memcmp() issues
+ * (see above).
+ */
+static inline int eth_mac_cmp(const ETH_MAC a, const ETH_MAC b)
+{
+  return memcmp(a, b, sizeof(ETH_MAC));
+}
 
 #if !defined(SIM_TEST_INIT)     /* Need stubs for test APIs */
 #define SIM_TEST_INIT
