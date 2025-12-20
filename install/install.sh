@@ -51,8 +51,14 @@ case $yn in
 	    # make sure pidp10 simulator has the right privileges
 	    # to access GPIO with root privileges:
 	    sudo chmod +s /opt/pidp10/bin/pidp10
+	    sudo chmod +s /opt/pidp10/bin/pdp10-ka
+	    sudo chmod +s /opt/pidp10/bin/pdp10-ki
+	    sudo chmod +s /opt/pidp10/bin/pdp10-ks
 	    # to run a RT thread:
 	    sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pidp10
+	    sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pdp10-ka
+	    sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pdp10-ki
+	    sudo setcap cap_sys_nice+ep /opt/pidp10/bin/pdp10-ks
 	    ;;
     [Nn]* ) ;;
         * ) echo "Please answer yes or no.";;
@@ -84,7 +90,7 @@ case $yn in
         # update first...
         sudo apt-get update
         # for simh:
-	sudo apt install -y libpcre3
+	#sudo apt install -y libpcre3
         sudo apt install -y libsdl2-image-dev
         sudo apt install -y libsdl2-net-dev
 	sudo apt install -y libvdeplug2
@@ -241,7 +247,7 @@ case $yn in
         sudo apt-get -y install libsdl2-dev
         sudo apt-get install -y libgtk-3-dev
         # for simh:
-	sudo apt install -y libpcre3-dev
+	#sudo apt install -y libpcre3-dev
 	sudo apt install -y libvdeplug2
 	# addl from Lars' its/build/dependencies script
 	sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
