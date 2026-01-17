@@ -1,0 +1,31 @@
+set debug stdout
+
+do impconfig.simh
+set imp num=62
+do impcode.simh
+
+
+# MODEM INTERFACES:
+
+set mi1 enabled
+# make sure to use 127.0.0.1, to avoid ipv6 issues
+attach -u mi1 11198:127.0.0.1:11199
+#attach -u mi1 11162::11331
+
+set mi2 disabled
+
+
+# HOST INTERFACES:
+
+set hi1 enabled
+set hi1 nodebug
+attach -u hi1 20001:127.0.0.1:20002
+# Host 0: Linux ncpd
+
+set hi2 enabled
+set hi2 nodebug
+attach -u hi2 21001:127.0.0.1:21002
+# Host 1: PiDP-10
+set hi2 convert
+
+go
