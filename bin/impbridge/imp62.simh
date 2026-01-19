@@ -1,8 +1,8 @@
 set debug stdout
 
-do impconfig.simh
+do /opt/pidp10/bin/impbridge/impconfig.simh
 set imp num=62
-do impcode.simh
+do /opt/pidp10/bin/impbridge/impcode.simh
 
 
 # MODEM INTERFACES:

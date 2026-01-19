@@ -73,6 +73,42 @@ do_start() {
 	fi
 
 	echo "Starting PiDP-10 with boot option $sys"
+
+	if [ "$boot_number" -eq 3 ]; then
+		echo
+		echo "*****STARTING IMP #62 FOR ARPANET CONNECTION*****"
+		echo
+
+		echo "Starting frpc..."
+		screen -dmS frpc bash -c "/opt/pidp10/bin/impbridge/frpc -c /opt/pidp10/bin/impbridge/frpc-guest.ini"
+		FRPC_PID=$!
+		echo "frpc started (PID: $FRPC_PID)"
+		sleep 2
+
+		echo "Starting guest-bridge..."
+		screen -dmS guest-bridge bash -c "/opt/pidp10/bin/impbridge/guest-bridge --verbose"
+		BRIDGE_PID=$!
+		echo "guest-bridge started (PID: $BRIDGE_PID)"
+		sleep 2
+
+
+		screen -dmS imp62 bash -c "/opt/pidp10/bin/impbridge/h316ov /opt/pidp10/bin/impbridge/imp62.simh"
+		IMP_PID=$!
+		echo "IMP62 started (PID: $BRIDGE_PID)"
+		sleep 2
+
+
+		echo start ncpd for linux telnet client or server
+		NCP=ncp
+		rm -rf ncp
+		screen -dmS ncpd bash -c "NCP=ncp /opt/pidp10/bin/impbridge/ncpdov 127.0.0.1 20001 20002"
+
+
+		echo
+		echo screen sessions created: frpc, guest-bridge, imp62, ncpd
+		echo
+	fi
+
 	cd $pidp_dir
 	echo screen -dmS pidp10 ./$pidp_bin /opt/pidp10/systems/$sel/boot$file_extension
 	screen -dmS pidp10 ./$pidp_bin /opt/pidp10/systems/$sel/boot$file_extension
@@ -95,6 +131,8 @@ do_stop() {
 		#superstition.
 	    screen -S pidp10 -X quit
 	    pkill -9 pidp10
+
+
 	    status=$?
 	    echo $status
 	fi
@@ -104,7 +142,14 @@ do_stop() {
 		echo Stopping tv11 also...
 		pkill -2 tv11
 	fi
-	return $status
+        pkill -9 frpc
+        pkill -9 guest-bridge
+        pkill -9 h316
+        pkill -9 ncpd
+
+	pkill -9 cbridge
+
+        return $status
 }
 
 case "$1" in
