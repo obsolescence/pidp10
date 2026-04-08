@@ -93,6 +93,7 @@ case $yn in
 	#sudo apt install -y libpcre3
         sudo apt install -y libsdl2-image-dev
         sudo apt install -y libsdl2-net-dev
+	sudo apt install -y libsdl2-ttf-dev
 	sudo apt install -y libvdeplug2
 	sudo apt install -y libpcap-dev
 	#the Pi does not come with telnet installed, so --
@@ -184,6 +185,24 @@ case $yn in
         * ) echo "Please answer yes or no.";;
 esac
 
+
+# ---------------------------
+# install WAITS disk images
+# ---------------------------
+echo
+read -p "Download and install Stanford SAIL's WAITS disk images? " yn
+case $yn in
+    [Yy]* ) 
+        echo -----------------------
+        echo Downloading WAITS disk images
+        wget -O /opt/pidp10/waits.tar.gz https://obsolescence.dev/pidp10-sw/waits.tar.gz
+	#unzip -d /opt/pidp10/systems/tops20 /opt/pidp10/systems/tops20/tops20-panda.zip
+        sudo tar -xzf /opt/pidp10/waits.tar.gz -C /opt/pidp10/
+	echo -----------------------
+        ;;
+    [Nn]* ) ;;
+        * ) echo "Please answer yes or no.";;
+esac
 
 # ---------------------------
 # install source code of Richard Cornwell's PDP-10 emulators
